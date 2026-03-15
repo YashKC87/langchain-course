@@ -468,6 +468,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "black" },
     { name = "isort" },
+    { name = "langchain" },
     { name = "langchain-ollama" },
     { name = "langchain-openai" },
     { name = "langchain-tavily" },
@@ -479,6 +480,7 @@ dependencies = [
 requires-dist = [
     { name = "black", specifier = ">=26.3.1" },
     { name = "isort", specifier = ">=8.0.1" },
+    { name = "langchain", specifier = ">=1.2.12" },
     { name = "langchain-ollama", specifier = ">=1.0.1" },
     { name = "langchain-openai", specifier = ">=1.1.11" },
     { name = "langchain-tavily", specifier = ">=0.2.17" },
