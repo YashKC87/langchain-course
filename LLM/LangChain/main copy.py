@@ -7,6 +7,8 @@ from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
+from tavily import TavilyClient
+
 
 # Load .env from the script folder first, then from nested course folder if present.
 _base_dir = Path(__file__).resolve().parent
