@@ -1,0 +1,9 @@
+.venv/
+.claude/
+__pycache__/
+*.pyc
+*.db
+server_output.log
+tmpclaude-*
+nul
+=*

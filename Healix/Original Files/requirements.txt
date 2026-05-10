@@ -1,0 +1,31 @@
+# ============================================================
+#  HEALIX — Python Dependencies
+#  Install all of these with: pip install -r requirements.txt
+# ============================================================
+
+# Web framework (the server that handles API requests)
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+
+# AI / LLM framework
+langchain==0.2.6
+langchain-openai==0.1.13
+langchain-community==0.2.6
+
+# Vector database (stores document embeddings for RAG)
+faiss-cpu==1.8.0
+
+# OpenAI API client
+openai==1.35.3
+
+# Environment variable management (reads .env file)
+python-dotenv==1.0.1
+
+# Data validation
+pydantic==2.7.4
+
+# HTTP requests (for calling external APIs)
+requests==2.32.3
+
+# Async support
+aiohttp==3.9.5
