@@ -1,0 +1,51 @@
+# Risk thresholds and model configuration
+# Tune via validation results and business impact — not hard-coded in prompts.
+
+defaults:
+  decision_threshold: 0.50
+  risk_bands:
+    low: [0.00, 0.39]
+    medium: [0.40, 0.69]
+    high: [0.70, 0.89]
+    critical: [0.90, 1.00]
+  # Cost-sensitive: weight false negatives higher for critical ops domains
+  fn_cost_weight: 5.0
+  fp_cost_weight: 1.0
+
+models:
+  endpoint_incident_24h:
+    prediction_window: "24h"
+    decision_threshold: 0.45
+    endpoint_env: "AML_ENDPOINT_ENDPOINT_INCIDENT"
+  vm_failure_1h:
+    prediction_window: "1h"
+    decision_threshold: 0.40
+    endpoint_env: "AML_ENDPOINT_VM_FAILURE"
+  intune_compliance_failure:
+    prediction_window: "24h"
+    decision_threshold: 0.50
+    endpoint_env: "AML_ENDPOINT_INTUNE"
+  avd_session_failure:
+    prediction_window: "1h"
+    decision_threshold: 0.45
+    endpoint_env: "AML_ENDPOINT_AVD"
+  app_deployment_failure:
+    prediction_window: "deployment"
+    decision_threshold: 0.50
+    endpoint_env: "AML_ENDPOINT_DEPLOY"
+  ticket_escalation_required:
+    prediction_window: "ticket"
+    decision_threshold: 0.55
+    endpoint_env: "AML_ENDPOINT_ESCALATION"
+
+investigation:
+  max_tool_calls: 20
+  max_iterations: 8
+  max_duration_seconds: 300
+  stop_after_consecutive_tool_failures: 3
+
+approval:
+  default_expiry_minutes:
+    L2: 60
+    L3: 120
+  require_change_record_for: ["L3"]

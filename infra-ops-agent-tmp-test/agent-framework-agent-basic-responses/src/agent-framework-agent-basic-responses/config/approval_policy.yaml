@@ -1,0 +1,48 @@
+# Action risk policy — deterministic; not decided by the LLM alone.
+
+levels:
+  L1:
+    name: Low
+    approval_required: false
+    requires_named_approver: false
+    requires_change_record: false
+    actions:
+      - collect_telemetry
+      - run_readonly_query
+      - trigger_intune_sync
+      - restart_approved_noncritical_service
+      - retry_approved_policy_or_deployment
+      - send_user_guidance
+      - create_or_update_incident
+  L2:
+    name: Medium
+    approval_required: true
+    requires_named_approver: false
+    requires_change_record: false
+    actions:
+      - restart_production_vm
+      - restart_application_service
+      - scale_aks_workload
+      - modify_limited_policy_assignment
+      - execute_repair_script
+  L3:
+    name: High
+    approval_required: true
+    requires_named_approver: true
+    requires_change_record: true
+    actions:
+      - delete_resource
+      - resize_production_vm
+      - drain_aks_node
+      - rollback_production_deployment
+      - modify_network_security_rules
+      - modify_identity_or_privileged_access
+      - shut_down_service
+      - restore_backup_data
+      - modify_tenant_wide_configuration
+      - cordon_aks_node
+
+preapproved_l1_environments:
+  - dev
+  - test
+  - prod
