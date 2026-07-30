@@ -47,6 +47,22 @@ class AzureFoundryConfig(BaseModel):
         return bool(self.endpoint and self.api_key and self.deployment_name)
 
 
+class OllamaConfig(BaseModel):
+    """On-prem LLM served via Ollama (OpenAI-compatible API).
+
+    Used for fully local/air-gapped inference, e.g. Gemma 3.
+    Ollama exposes an OpenAI-compatible endpoint at {base_url}/v1.
+    """
+    base_url: str = "http://localhost:11434"
+    model: str = "gemma3"
+    embed_model: str = "nomic-embed-text"
+    enabled: bool = False
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(self.enabled and self.base_url and self.model)
+
+
 class AWSConfig(BaseModel):
     """AWS credentials for EC2/CloudWatch agentless polling."""
     access_key_id: str = ""
@@ -88,6 +104,7 @@ class HealixConfig(BaseModel):
     azure: AzureConfig = Field(default_factory=AzureConfig)
     sentinel: SentinelConfig = Field(default_factory=SentinelConfig)
     foundry: AzureFoundryConfig = Field(default_factory=AzureFoundryConfig)
+    ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     aws: AWSConfig = Field(default_factory=AWSConfig)
     integration_api: IntegrationAPIConfig = Field(default_factory=IntegrationAPIConfig)
     alert_delivery: AlertDeliveryConfig = Field(default_factory=AlertDeliveryConfig)
@@ -130,6 +147,12 @@ def load_config() -> HealixConfig:
             deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", ""),
             embedding_deployment=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-small"),
             api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+        ),
+        ollama=OllamaConfig(
+            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            model=os.getenv("OLLAMA_MODEL", "gemma3"),
+            embed_model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
+            enabled=os.getenv("LLM_PROVIDER", "").lower() == "ollama",
         ),
         aws=AWSConfig(
             access_key_id=os.getenv("AWS_ACCESS_KEY_ID", ""),

@@ -56,14 +56,14 @@ def build_structured_response(result: dict) -> agent_response:
     return agent_response(answer=answer, sources=unique_sources)
 
 
-llm = ChatOllama(model="qwen3:1.7b")
+llm = ChatOllama(model=os.getenv("OLLAMA_MODEL", "gemma3:270m"))
 tools = [TavilySearch()]
 agent = create_agent(model=llm,tools=tools,response_format=agent_response)
 
 
 
 def main():
-    print("Hello from langchain-course!")
+    print("Hello from Weather agent!")
     result = agent.invoke({"messages":HumanMessage(content="What is weather in India?")})
     result["structured_response"] = build_structured_response(result).model_dump()
 

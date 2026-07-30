@@ -2,6 +2,33 @@
 ### Hybrid Endpoint Autonomous Learning & Intelligent X-remediation
 ---
 
+## Documentation
+
+For a concise catalogue-style overview of the tool, see:
+
+- [Marketplace Catalog](../MARKETPLACE_CATALOG.md)
+- [Executive Summary](../EXECUTIVE_SUMMARY.md)
+
+## Recruiter / Customer Snapshot
+
+HEALIX is an AI-powered operations console for infrastructure, security, and endpoint response. It combines monitoring, alerting, compliance checks, workflow automation, and AI-assisted investigation into one platform.
+
+What stands out:
+
+- Clear product story: detect, explain, and heal issues faster
+- Real backend architecture: FastAPI, modular engines, and typed request models
+- Practical integrations: Microsoft Defender, Sentinel, Intune, Entra ID, Azure Monitor, AWS, and Azure AI Foundry
+- Multiple entry points: API, dashboard, AI chat, remediation, and analytics
+- Demo-friendly but designed for live services
+
+Use this project to show:
+
+- Full-stack product thinking
+- Backend architecture and service orchestration
+- AI-assisted operational workflows
+- Cloud and security integration design
+- A product-oriented engineering portfolio piece
+
 ## What You're Building
 
 HEALIX is a two-part system:
@@ -13,7 +40,7 @@ HEALIX is a two-part system:
 │   (The dashboard)   │ ◄────── │  (The AI brain)     │
 └─────────────────────┘         └─────────────────────┘
          ↑                                ↑
-    Claude.ai or                  Your computer
+                                    Your computer
     any browser                   runs this locally
 ```
 

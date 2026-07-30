@@ -248,9 +248,39 @@ class HealIXAgent:
         self._init_ai()
 
     def _init_ai(self):
-        """Initialize the AI models with provider priority: Foundry > OpenAI direct > demo."""
+        """Initialize the AI models with provider priority: Ollama (on-prem) > Foundry > OpenAI direct > demo."""
 
-        # ── Priority 1: Azure AI Foundry ─────────────────────────
+        # ── Priority 1: On-prem Ollama (e.g. Gemma 3) ────────────
+        # Ollama exposes an OpenAI-compatible API at {base_url}/v1, so we
+        # reuse ChatOpenAI / OpenAIEmbeddings with a local base_url. Fully
+        # offline — no cloud calls. Embeddings use a local model since Gemma
+        # has no embedding head.
+        ollama_cfg = getattr(self.config, "ollama", None)
+        if ollama_cfg and ollama_cfg.is_configured:
+            try:
+                base_url = ollama_cfg.base_url.rstrip("/") + "/v1"
+                self.llm = ChatOpenAI(
+                    model=ollama_cfg.model,
+                    temperature=0.1,
+                    openai_api_key="ollama",   # placeholder; Ollama ignores it
+                    base_url=base_url,
+                )
+                embeddings = OpenAIEmbeddings(
+                    model=ollama_cfg.embed_model,
+                    openai_api_key="ollama",
+                    base_url=base_url,
+                    check_embedding_ctx_length=False,  # local models lack tiktoken mapping
+                )
+                self.rag.build_knowledge_base(embeddings=embeddings)
+                self._build_qa_chain()
+                self._demo_mode = False
+                self._llm_provider = "ollama_onprem"
+                print(f"AI models ready! Provider: Ollama on-prem ({ollama_cfg.model} @ {ollama_cfg.base_url})")
+                return
+            except Exception as e:
+                print(f"Ollama on-prem init failed, falling back: {e}")
+
+        # ── Priority 2: Azure AI Foundry ─────────────────────────
         foundry_cfg = getattr(self.config, "foundry", None)
         if foundry_cfg and foundry_cfg.is_configured:
             try:
@@ -277,7 +307,7 @@ class HealIXAgent:
             except Exception as e:
                 print(f"Azure AI Foundry init failed, falling back: {e}")
 
-        # ── Priority 2: Direct OpenAI ────────────────────────────
+        # ── Priority 3: Direct OpenAI ────────────────────────────
         api_key = self.config.openai_api_key if self.config else os.getenv("OPENAI_API_KEY")
         if api_key and api_key != "your-openai-api-key-here":
             try:
@@ -295,8 +325,9 @@ class HealIXAgent:
             except Exception as e:
                 print(f"OpenAI direct init failed, falling back to demo: {e}")
 
-        # ── Priority 3: Demo mode ────────────────────────────────
+        # ── Priority 4: Demo mode ────────────────────────────────
         print("No AI provider configured. Running in DEMO MODE.")
+        print("   On-prem Ollama:   set LLM_PROVIDER=ollama (+ OLLAMA_MODEL, OLLAMA_BASE_URL)")
         print("   Azure AI Foundry: set AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY + AZURE_OPENAI_DEPLOYMENT_NAME")
         print("   OpenAI direct:    set OPENAI_API_KEY in .env")
         self._demo_mode = True
