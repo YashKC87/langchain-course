@@ -31,7 +31,9 @@ class AzureFrontierClient(LanguageModel):
         self.model_name = model_name
         self.provider = "azure_openai"
         self.model_type = ModelType.FRONTIER
-        self.endpoint = endpoint.rstrip("/")
+        # AzureOpenAI SDK expects the resource root, e.g. https://{resource}.openai.azure.com
+        # Accept portal/copy-paste values that include /openai or /openai/v1.
+        self.endpoint = self._normalize_azure_endpoint(endpoint)
         self.api_key = api_key
         self.api_version = api_version
         self.deployment = deployment
@@ -39,6 +41,14 @@ class AzureFrontierClient(LanguageModel):
         self._usage = UsageStats(is_actual_usage=False, provenance="SIMULATED")
         self._fail_mode: str | None = None
         self._client = None
+
+    @staticmethod
+    def _normalize_azure_endpoint(endpoint: str) -> str:
+        value = (endpoint or "").strip().rstrip("/")
+        for suffix in ("/openai/v1", "/openai", "/v1"):
+            if value.endswith(suffix):
+                value = value[: -len(suffix)].rstrip("/")
+        return value
 
     def set_failure_mode(self, mode: str | None) -> None:
         self._fail_mode = mode
