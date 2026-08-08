@@ -78,13 +78,45 @@ def page_overview() -> None:
 
 
 def _run_and_render(pattern_id: str, **kwargs) -> None:
-    if st.button(f"Execute {pattern_id}", type="primary", key=f"run_{pattern_id}"):
-        with st.spinner("Running pattern..."):
+    # Hydrate from persisted results so refreshes still show the latest execution.
+    if f"result_{pattern_id}" not in st.session_state:
+        cached = service.result_store.get(pattern_id)
+        if cached is not None:
+            st.session_state[f"result_{pattern_id}"] = cached
+
+    col_a, col_b = st.columns([1, 1])
+    with col_a:
+        run_clicked = st.button(
+            f"Execute {pattern_id}",
+            type="primary",
+            key=f"run_{pattern_id}",
+            use_container_width=True,
+        )
+    with col_b:
+        reload_clicked = st.button(
+            "Load latest saved result",
+            key=f"load_{pattern_id}",
+            use_container_width=True,
+        )
+
+    if run_clicked:
+        with st.spinner(
+            "Running pattern with live/demo providers. Live Ollama/Azure calls can take 1–3 minutes..."
+        ):
             result = service.run_pattern(pattern_id, **kwargs)
         st.session_state[f"result_{pattern_id}"] = result
+        st.success("Execution complete.")
+    elif reload_clicked:
+        cached = service.result_store.get(pattern_id)
+        if cached is None:
+            st.warning("No saved result yet. Click Execute first.")
+        else:
+            st.session_state[f"result_{pattern_id}"] = cached
+            st.info("Loaded latest saved result.")
+
     result = st.session_state.get(f"result_{pattern_id}")
     if result is None:
-        st.info("Click Execute to run this scenario.")
+        st.info("Click Execute to run this scenario, or Load latest saved result if one exists.")
         return
     render_pattern_page(result)
 
@@ -214,33 +246,27 @@ def page_model_comparison() -> None:
 
 def main() -> None:
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", PAGES)
+    # selectbox is more reliable than radio in some remote/browser automation setups
+    page = st.sidebar.selectbox("Go to", PAGES, index=0, key="nav_page")
     st.sidebar.markdown("---")
+    st.sidebar.write(settings.public_status())
     st.sidebar.caption(settings.pricing_disclaimer)
     st.sidebar.caption("Secrets are never displayed.")
 
-    if page == "Overview":
-        page_overview()
-    elif page == "1 — Planner-Worker":
-        page_planner()
-    elif page == "2 — Router Pattern":
-        page_router()
-    elif page == "3 — Confidence Cascade":
-        page_cascade()
-    elif page == "4 — RAG":
-        page_rag()
-    elif page == "5 — Fallback":
-        page_fallback()
-    elif page == "AI Model Operations":
-        render_mlops_page()
-    elif page == "LangSmith / LLMOps":
-        render_langsmith_page()
-    elif page == "Trace Explorer":
-        render_trace_explorer()
-    elif page == "Architecture":
-        page_architecture()
-    elif page == "Model Comparison":
-        page_model_comparison()
+    pages = {
+        "Overview": page_overview,
+        "1 — Planner-Worker": page_planner,
+        "2 — Router Pattern": page_router,
+        "3 — Confidence Cascade": page_cascade,
+        "4 — RAG": page_rag,
+        "5 — Fallback": page_fallback,
+        "AI Model Operations": render_mlops_page,
+        "LangSmith / LLMOps": render_langsmith_page,
+        "Trace Explorer": render_trace_explorer,
+        "Architecture": page_architecture,
+        "Model Comparison": page_model_comparison,
+    }
+    pages[page]()
 
 
 if __name__ == "__main__":

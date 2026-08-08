@@ -204,6 +204,8 @@ __marimo__/
 
 # Local lab artifacts
 .local_traces.json
+.local_pattern_results.json
+.local_live_probe_traces.json
 *.local.json
 .secrets/
 secrets/

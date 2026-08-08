@@ -13,6 +13,7 @@ from app.patterns.fallback import FallbackPattern
 from app.patterns.planner_worker import PlannerWorkerPattern
 from app.patterns.rag import RAGPattern
 from app.patterns.router import RouterPattern
+from app.services.result_store import ResultStore, get_result_store
 from app.services.telemetry import TelemetryService
 
 PATTERN_CATALOG = [
@@ -65,11 +66,13 @@ class ScenarioService:
         settings: Settings | None = None,
         store: TraceStore | None = None,
         telemetry: TelemetryService | None = None,
+        result_store: ResultStore | None = None,
     ):
         self.settings = settings or get_settings()
         self.store = store or get_trace_store()
         self.telemetry = telemetry or TelemetryService()
-        self._last_results: dict[str, PatternResult] = {}
+        self.result_store = result_store or get_result_store()
+        self._last_results: dict[str, PatternResult] = self.result_store.all()
 
     def catalog(self) -> list[dict[str, Any]]:
         return PATTERN_CATALOG
@@ -94,6 +97,7 @@ class ScenarioService:
                 failure_type=str(kwargs.get("failure_type", "http_503"))
             )
         self._last_results[pattern_id] = result
+        self.result_store.save(result)
         return result
 
     def run_all(self) -> dict[str, PatternResult]:
