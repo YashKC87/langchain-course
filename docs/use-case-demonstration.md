@@ -254,8 +254,7 @@ Each pattern appears as a tile on **Overview**. Open a tile to see:
 
 - Architecture diagram: Plan → Execute → Synthesize  
 - “Why not Frontier for CPU?” style comparison on a worker segment  
-- Token chart: hybrid Frontier tokens � comparison on a worker segment  
-- Token chart: hybrid Frontier tokens ≪ estimated all-Frontier  
+- Token chart: hybrid Frontier tokens much lower than estimated all-Frontier  
 - AI Architect Decision: Frontier tokens avoided  
 
 ---
