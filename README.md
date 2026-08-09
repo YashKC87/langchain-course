@@ -286,7 +286,8 @@ Streamlit app brand: **Right Model Lab** (`streamlit run app/ui/dashboard.py`).
 | **AI Model Operations** | MLOps KPIs and interactive charts (usage, avoidance, latency, cost, confidence) |
 | **Model Comparison** | Selected hybrid vs alternative/estimated segments by pattern |
 
-Video narration by dropdown page: [`docs/video-script.md`](docs/video-script.md).
+- Video narration by dropdown page: [`docs/video-script.md`](docs/video-script.md)
+- Full technical use-case demonstration (every element): [`docs/use-case-demonstration.md`](docs/use-case-demonstration.md)
 
 Theme: Dark / Light toggle in the left sidebar.
 
@@ -516,6 +517,8 @@ Writes `docs/right-model-lab-report.html` (no secrets).
 | `docs/model-selection.md` | Selection rationale |
 | `docs/langsmith-observability.md` | Tracing details |
 | `docs/ui-walkthrough.md` | UI section guide |
+| `docs/use-case-demonstration.md` | Detailed technical demo of every lab element |
+| `docs/video-script.md` | Video narration by dropdown page |
 
 ---
 
