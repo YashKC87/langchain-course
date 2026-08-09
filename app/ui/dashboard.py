@@ -33,22 +33,9 @@ service = get_scenario_service()
 
 PAGES = [
     "Overview",
-    "1 — Planner-Worker",
-    "2 — Router Pattern",
-    "3 — Confidence Cascade",
-    "4 — RAG",
-    "5 — Fallback",
     "AI Model Operations",
     "Model Comparison",
 ]
-
-PAGE_ALIASES = {
-    "planner_worker": "1 — Planner-Worker",
-    "router": "2 — Router Pattern",
-    "confidence_cascade": "3 — Confidence Cascade",
-    "rag": "4 — RAG",
-    "fallback": "5 — Fallback",
-}
 
 
 def page_overview() -> None:
@@ -121,8 +108,31 @@ def page_overview() -> None:
                 unsafe_allow_html=True,
             )
             if st.button("Open", key=f"open_{item['pattern_id']}", use_container_width=True):
-                st.session_state["pending_nav_page"] = PAGE_ALIASES[item["pattern_id"]]
+                st.session_state["overview_pattern_id"] = item["pattern_id"]
                 st.rerun()
+
+    pattern_id = st.session_state.get("overview_pattern_id")
+    if pattern_id:
+        st.markdown("---")
+        meta = next((p for p in PATTERN_CATALOG if p["pattern_id"] == pattern_id), None)
+        title = meta["pattern"] if meta else pattern_id
+        head_l, head_r = st.columns([4, 1])
+        with head_l:
+            st.subheader(f"Pattern detail · {title}")
+        with head_r:
+            if st.button("Close detail", use_container_width=True):
+                st.session_state.pop("overview_pattern_id", None)
+                st.rerun()
+        if pattern_id == "planner_worker":
+            page_planner()
+        elif pattern_id == "router":
+            page_router()
+        elif pattern_id == "confidence_cascade":
+            page_cascade()
+        elif pattern_id == "rag":
+            page_rag()
+        elif pattern_id == "fallback":
+            page_fallback()
 
 
 def _run_and_render(pattern_id: str, **kwargs) -> None:
@@ -280,11 +290,6 @@ def main() -> None:
 
     pages = {
         "Overview": page_overview,
-        "1 — Planner-Worker": page_planner,
-        "2 — Router Pattern": page_router,
-        "3 — Confidence Cascade": page_cascade,
-        "4 — RAG": page_rag,
-        "5 — Fallback": page_fallback,
         "AI Model Operations": render_mlops_page,
         "Model Comparison": page_model_comparison,
     }
