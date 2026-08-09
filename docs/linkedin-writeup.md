@@ -4,6 +4,12 @@ Copy-paste ready. Use **Version A** for a standard post, **Version B** for a sho
 
 ---
 
+## 50-word statement
+
+Right Model Lab shows how Small Language Models and Frontier models work together for digital workplace device monitoring. Use the right model for the right task: SLMs handle routine high-volume work; Frontier handles planning, ambiguity, and synthesis. Success is measured by Frontier tokens avoided—while quality, latency, and confidence stay visible.
+
+---
+
 ## Version A — Full post (recommended)
 
 Not every AI workload needs a Frontier model.
