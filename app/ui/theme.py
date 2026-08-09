@@ -116,6 +116,64 @@ footer { visibility: hidden; }
   margin-top:0.6rem; padding:0.55rem 0.65rem; border-radius:10px;
   border:1px dashed rgba(148,163,184,0.35); color:#94a3b8; font-size:0.75rem;
 }
+.arch-card, .arch-system {
+  border:1px solid rgba(148,163,184,0.22);
+  background:linear-gradient(160deg, rgba(30,41,59,0.92), rgba(15,23,42,0.94));
+  border-radius:14px; padding:1rem 1.1rem; margin:0 0 1rem 0;
+}
+.arch-system-title, .arch-name { font-weight:700; color:#f8fafc; font-size:1.05rem; }
+.arch-scenario, .arch-thesis { color:#cbd5e1; font-size:0.86rem; margin:0.25rem 0 0.7rem 0; }
+.arch-thesis { color:#a7f3d0; border-left:2px solid #10b981; padding-left:0.55rem; }
+.arch-flow, .arch-system-flow {
+  display:flex; flex-wrap:wrap; align-items:stretch; gap:0.55rem; margin:0.4rem 0 0.75rem 0;
+}
+.arch-lane {
+  flex:1 1 180px; min-width:160px;
+  border:1px solid rgba(148,163,184,0.18); border-radius:12px;
+  background:rgba(2,6,23,0.45); padding:0.55rem;
+}
+.arch-lane-label {
+  color:#94a3b8; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em;
+  margin-bottom:0.45rem;
+}
+.arch-nodes { display:flex; flex-direction:column; gap:0.45rem; }
+.arch-node {
+  border-radius:10px; padding:0.55rem 0.65rem; border:1px solid transparent;
+  min-height:4.5rem;
+}
+.arch-node.slm { background:rgba(16,185,129,0.14); border-color:rgba(16,185,129,0.45); }
+.arch-node.frontier { background:rgba(59,130,246,0.14); border-color:rgba(59,130,246,0.45); }
+.arch-node.nonllm { background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.4); }
+.arch-role {
+  font-size:0.68rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  margin-bottom:0.2rem; font-family:"IBM Plex Mono", monospace;
+}
+.arch-node.slm .arch-role { color:#6ee7b7; }
+.arch-node.frontier .arch-role { color:#93c5fd; }
+.arch-node.nonllm .arch-role { color:#fcd34d; }
+.arch-title { color:#f8fafc; font-weight:700; font-size:0.9rem; line-height:1.25; }
+.arch-desc { color:#94a3b8; font-size:0.76rem; margin-top:0.2rem; line-height:1.35; }
+.arch-connector {
+  display:flex; align-items:center; justify-content:center;
+  color:#67e8f9; font-size:1.35rem; font-weight:700; min-width:1.2rem; padding:0 0.1rem;
+}
+.arch-legend { display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center; margin-top:0.35rem; }
+.arch-pill {
+  display:inline-block; border-radius:999px; padding:0.12rem 0.55rem;
+  font-size:0.7rem; font-weight:700; border:1px solid transparent;
+}
+.arch-pill.slm { background:rgba(16,185,129,0.18); color:#6ee7b7; border-color:rgba(16,185,129,0.45); }
+.arch-pill.frontier { background:rgba(59,130,246,0.18); color:#93c5fd; border-color:rgba(59,130,246,0.45); }
+.arch-pill.nonllm { background:rgba(245,158,11,0.16); color:#fcd34d; border-color:rgba(245,158,11,0.4); }
+.arch-edge { color:#94a3b8; font-size:0.78rem; font-family:"IBM Plex Mono", monospace; }
+.arch-roles {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.55rem;
+  margin-top:0.75rem; color:#cbd5e1; font-size:0.8rem;
+}
+@media (max-width:900px) {
+  .arch-roles { grid-template-columns:1fr; }
+  .arch-connector { width:100%; transform:rotate(90deg); min-height:1.2rem; }
+}
 </style>
 """
     return """
@@ -197,6 +255,61 @@ footer { visibility: hidden; }
 .sidebar-help {
   margin-top:0.6rem; padding:0.55rem 0.65rem; border-radius:10px;
   border:1px dashed #cbd5e1; color:#64748b; font-size:0.75rem;
+}
+.arch-card, .arch-system {
+  border:1px solid #dbe3ef; background:#ffffff; border-radius:14px;
+  padding:1rem 1.1rem; margin:0 0 1rem 0; box-shadow:0 1px 2px rgba(15,23,42,0.04);
+}
+.arch-system-title, .arch-name { font-weight:700; color:#0f172a; font-size:1.05rem; }
+.arch-scenario, .arch-thesis { color:#475569; font-size:0.86rem; margin:0.25rem 0 0.7rem 0; }
+.arch-thesis { color:#047857; border-left:2px solid #10b981; padding-left:0.55rem; }
+.arch-flow, .arch-system-flow {
+  display:flex; flex-wrap:wrap; align-items:stretch; gap:0.55rem; margin:0.4rem 0 0.75rem 0;
+}
+.arch-lane {
+  flex:1 1 180px; min-width:160px;
+  border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc; padding:0.55rem;
+}
+.arch-lane-label {
+  color:#64748b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em;
+  margin-bottom:0.45rem;
+}
+.arch-nodes { display:flex; flex-direction:column; gap:0.45rem; }
+.arch-node {
+  border-radius:10px; padding:0.55rem 0.65rem; border:1px solid transparent; min-height:4.5rem;
+}
+.arch-node.slm { background:#ecfdf5; border-color:#a7f3d0; }
+.arch-node.frontier { background:#eff6ff; border-color:#bfdbfe; }
+.arch-node.nonllm { background:#fffbeb; border-color:#fde68a; }
+.arch-role {
+  font-size:0.68rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  margin-bottom:0.2rem; font-family:"IBM Plex Mono", monospace;
+}
+.arch-node.slm .arch-role { color:#047857; }
+.arch-node.frontier .arch-role { color:#1d4ed8; }
+.arch-node.nonllm .arch-role { color:#b45309; }
+.arch-title { color:#0f172a; font-weight:700; font-size:0.9rem; line-height:1.25; }
+.arch-desc { color:#64748b; font-size:0.76rem; margin-top:0.2rem; line-height:1.35; }
+.arch-connector {
+  display:flex; align-items:center; justify-content:center;
+  color:#0284c7; font-size:1.35rem; font-weight:700; min-width:1.2rem; padding:0 0.1rem;
+}
+.arch-legend { display:flex; flex-wrap:wrap; gap:0.45rem; align-items:center; margin-top:0.35rem; }
+.arch-pill {
+  display:inline-block; border-radius:999px; padding:0.12rem 0.55rem;
+  font-size:0.7rem; font-weight:700; border:1px solid transparent;
+}
+.arch-pill.slm { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+.arch-pill.frontier { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.arch-pill.nonllm { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+.arch-edge { color:#64748b; font-size:0.78rem; font-family:"IBM Plex Mono", monospace; }
+.arch-roles {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.55rem;
+  margin-top:0.75rem; color:#334155; font-size:0.8rem;
+}
+@media (max-width:900px) {
+  .arch-roles { grid-template-columns:1fr; }
+  .arch-connector { width:100%; transform:rotate(90deg); min-height:1.2rem; }
 }
 </style>
 """
