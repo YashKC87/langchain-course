@@ -7,22 +7,13 @@ import streamlit as st
 from app.config import get_settings
 from app.observability.trace_store import get_trace_store
 from app.services.scenario_service import get_scenario_service
-from app.ui.theme import callout, inject_theme, kpi_grid, status_strip
+from app.ui.theme import callout, inject_theme, kpi_grid, page_header, status_strip
 from app.ui.token_charts import render_mlops_charts
 
 
 def render_mlops_page() -> None:
     inject_theme()
-    st.markdown(
-        """
-<div class="hero-banner">
-  <div class="eyebrow">AI Model Operations</div>
-  <div class="title">MLOps / LLMOps Control Tower</div>
-  <p class="subtitle">Measure whether the architecture used the right model for the right task.</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    page_header("AI Model Operations", "MLOps control tower · right-model evidence")
     service = get_scenario_service()
     c1, c2 = st.columns([1, 3])
     with c1:
@@ -81,16 +72,7 @@ def render_mlops_page() -> None:
 
 def render_langsmith_page() -> None:
     inject_theme()
-    st.markdown(
-        """
-<div class="hero-banner">
-  <div class="eyebrow">LangSmith / LLMOps</div>
-  <div class="title">Execution Truth Panel</div>
-  <p class="subtitle">Which model ran, which segment ran, tokens, latency, confidence, escalation, fallback.</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    page_header("LangSmith / LLMOps", "Which model · segment · tokens · latency · confidence")
     settings = get_settings()
     status = settings.public_status()
     status_strip(

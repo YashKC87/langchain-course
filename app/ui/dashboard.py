@@ -209,16 +209,7 @@ def page_fallback() -> None:
 
 
 def page_architecture() -> None:
-    st.markdown(
-        f"""
-<div class="hero-banner">
-  <div class="eyebrow">Executive Architecture</div>
-  <div class="title">{APP_NAME}</div>
-  <p class="subtitle">Five patterns. One principle: use the right model for the right task.</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    page_header(APP_NAME, "Five patterns · one principle: use the right model for the right task")
     st.code(
         """
                     DEVICE MONITORING
