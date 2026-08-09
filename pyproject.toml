@@ -1,22 +1,38 @@
 [project]
-name = "langchain-course"
-version = "0.1.0"
-description = "Add your description here"
+name = "slm-frontier-device-monitoring-patterns"
+version = "1.0.0"
+description = "SLM + Frontier Model Architecture Pattern Lab for Digital Workplace Device Monitoring"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "black>=26.3.1",
-    "isort>=8.0.1",
-    "langchain>=1.2.12",
-    "langchain-ollama>=1.0.1",
-    "langchain-openai>=1.1.11",
-    "python-dotenv>=1.2.2",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "streamlit>=1.40.0",
+    "plotly>=5.24.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "python-dotenv>=1.0.1",
+    "httpx>=0.27.0",
+    "scikit-learn>=1.5.0",
+    "openai>=1.54.0",
+    "langsmith>=0.1.147",
+    "tenacity>=9.0.0",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
-    "black>=26.3.1",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "respx>=0.21.1",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.black]
-target-version = ["py313"]
+target-version = ["py311"]

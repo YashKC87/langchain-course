@@ -201,3 +201,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local lab artifacts
+.local_traces.json
+.local_pattern_results.json
+.local_live_probe_traces.json
+*.local.json
+.secrets/
+secrets/
+.env.*
+!.env.example
+client_secret*
+*.pem
+*.key
+
+# Generated caches
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+uv.lock
