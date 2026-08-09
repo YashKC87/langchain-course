@@ -28,7 +28,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-inject_theme()
 write_datasets()
 settings = get_settings()
 service = get_scenario_service()
@@ -296,9 +295,14 @@ def main() -> None:
         st.session_state["nav_page"] = pending
     if "nav_page" not in st.session_state:
         st.session_state["nav_page"] = "Overview"
+    if "ui_theme" not in st.session_state:
+        st.session_state["ui_theme"] = "Dark"
 
     st.sidebar.markdown(f"### {APP_NAME}")
-    st.sidebar.caption("Pattern navigation")
+    st.sidebar.caption("Use this left panel to navigate pages and change theme.")
+    theme = st.sidebar.radio("Theme", ["Dark", "Light"], horizontal=True, key="ui_theme")
+    inject_theme(theme)
+
     page = st.sidebar.selectbox("Go to", PAGES, key="nav_page")
     st.sidebar.markdown("---")
     status = settings.public_status()
@@ -312,6 +316,10 @@ def main() -> None:
     )
     st.sidebar.caption(settings.pricing_disclaimer)
     st.sidebar.caption("Secrets are never displayed.")
+    st.sidebar.markdown(
+        '<div class="sidebar-help">If the left panel is hidden, click the arrow at the top-left of the page to expand it.</div>',
+        unsafe_allow_html=True,
+    )
 
     pages = {
         "Overview": page_overview,
