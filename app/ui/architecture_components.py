@@ -478,16 +478,9 @@ def _tail_view(result: PatternResult) -> None:
 
 
 def render_pattern_page(result: PatternResult) -> None:
-    st.markdown(
-        f"""
-<div class="hero-banner">
-  <div class="eyebrow">Pattern Lab · Explainable Model Selection</div>
-  <div class="title">{result.pattern}</div>
-  <p class="subtitle">Scenario → Segments → SLM/Frontier/NON-LLM → Trace → Baseline → Decision</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    from app.ui.theme import page_header
+
+    page_header(result.pattern, "Scenario → Segments → Model choice → Trace → Baseline → Decision")
     _scenario_telemetry(result)
     render_architecture_flow(result)
     render_why_this_model(result)

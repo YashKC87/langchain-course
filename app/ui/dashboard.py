@@ -16,7 +16,7 @@ from app.data.generator import write_datasets
 from app.services.scenario_service import PATTERN_CATALOG, get_scenario_service
 from app.ui.architecture_components import render_kpi_row, render_pattern_page
 from app.ui.mlops_dashboard import render_langsmith_page, render_mlops_page
-from app.ui.theme import callout, inject_theme, status_strip
+from app.ui.theme import callout, inject_theme, page_header, status_strip
 from app.ui.trace_explorer import render_trace_explorer
 
 APP_NAME = "Right Model Lab"
@@ -61,19 +61,11 @@ def page_overview() -> None:
     cards = service.overview_cards()
     mlops = service.mlops_dashboard().get("kpis") or {}
 
+    # Compact analytics toolbar (no large blocking hero panel)
+    page_header(APP_NAME, "Right model · right task · measurable evidence")
     st.markdown(
-        f"""
-<div class="hero-banner">
-  <div class="title">{APP_NAME}</div>
-  <p class="subtitle">Use the right model for the right task — tokens, latency, cost, confidence, and LangSmith evidence.</p>
-</div>
-""",
+        '<p class="thesis-line">Frontier for planning/ambiguity/synthesis · SLM for routine high-volume work</p>',
         unsafe_allow_html=True,
-    )
-    callout(
-        "<strong>Decision thesis:</strong> Use the right model for the right task. "
-        "Reserve Frontier for planning, ambiguity, and synthesis. Use SLM for routine high-volume work.",
-        "good",
     )
     status_strip(
         [
@@ -83,22 +75,20 @@ def page_overview() -> None:
             ("LangSmith", "active" if status["langsmith_active"] else "local-only"),
             (
                 "Fleet",
-                f"{cards.get('endpoints', 0)} total · {cards.get('healthy', 0)} healthy · "
-                f"{cards.get('at_risk', 0)} at risk · {cards.get('critical', 0)} critical",
+                f"{cards.get('endpoints', 0)} · {cards.get('healthy', 0)} healthy · "
+                f"{cards.get('at_risk', 0)} risk · {cards.get('critical', 0)} critical",
             ),
         ]
     )
 
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        if st.button("Run all five patterns", type="primary", use_container_width=True):
+    action_l, action_r = st.columns([1, 4])
+    with action_l:
+        if st.button("Run all patterns", type="primary", use_container_width=True):
             with st.spinner("Executing patterns (live runs can take several minutes)..."):
                 service.run_all()
-            st.success("All patterns executed. Metrics refreshed.")
-    with c2:
-        st.caption(
-            "Tip: for demos, open each pattern and click “Load latest saved result” before re-running live."
-        )
+            st.success("All patterns executed.")
+    with action_r:
+        st.caption("Demo tip: open a pattern and use “Load latest saved result” for instant review.")
 
     render_kpi_row(
         cards,
@@ -111,12 +101,16 @@ def page_overview() -> None:
         },
     )
 
-    st.markdown("### The Five Architecture Patterns")
+    st.markdown("### Patterns")
     saved = service.result_store.all()
     cols = st.columns(5)
     for col, item in zip(cols, PATTERN_CATALOG):
         result = saved.get(item["pattern_id"])
-        ts = result.created_at.isoformat() if result else "Not run yet"
+        ts = (
+            result.created_at.strftime("%Y-%m-%d %H:%M")
+            if result
+            else "Not run"
+        )
         with col:
             st.markdown(
                 f"""
@@ -126,13 +120,12 @@ def page_overview() -> None:
   <div class="role"><b>SLM:</b> {item['slm_role']}</div>
   <div class="role"><b>Frontier:</b> {item['frontier_role']}</div>
   <div class="benefit">{item['primary_benefit']}</div>
-  <div class="role" style="margin-top:0.45rem;">Last run: {ts}</div>
+  <div class="role" style="margin-top:0.35rem;">Last run: {ts}</div>
 </div>
 """,
                 unsafe_allow_html=True,
             )
-            if st.button("Open pattern", key=f"open_{item['pattern_id']}", use_container_width=True):
-                # Must set a pending key BEFORE the selectbox is instantiated on next run.
+            if st.button("Open", key=f"open_{item['pattern_id']}", use_container_width=True):
                 st.session_state["pending_nav_page"] = PAGE_ALIASES[item["pattern_id"]]
                 st.rerun()
 
@@ -264,15 +257,9 @@ def page_architecture() -> None:
 
 
 def page_model_comparison() -> None:
-    st.markdown(
-        """
-<div class="hero-banner">
-  <div class="eyebrow">Model Comparison</div>
-  <div class="title">Selected vs Alternative by Segment</div>
-  <p class="subtitle">Lower token count is not automatically better. Compare tokens, cost, latency, confidence, grounding, escalation, availability.</p>
-</div>
-""",
-        unsafe_allow_html=True,
+    page_header(
+        "Model Comparison",
+        "Selected vs alternative by segment · tokens · latency · confidence · cost",
     )
     if not service._last_results:
         if st.button("Generate comparisons by running all patterns"):

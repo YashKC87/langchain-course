@@ -26,42 +26,75 @@ section[data-testid="stSidebar"] {
 }
 section[data-testid="stSidebar"] * { color: #e5e7eb !important; }
 h1, h2, h3, h4 { letter-spacing: -0.02em; color: #f8fafc !important; }
-.block-container { padding-top: 1.2rem; max-width: 1400px; }
+.block-container { padding-top: 0.6rem; max-width: 1440px; }
 
-.hero-banner {
-  border: 1px solid rgba(34,211,238,0.35);
-  background: linear-gradient(120deg, rgba(34,211,238,0.14), rgba(16,185,129,0.10));
-  border-radius: 16px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+/* Reduce Streamlit chrome that feels blocking */
+header[data-testid="stHeader"] {
+  background: rgba(11,18,32,0.75);
+  backdrop-filter: blur(8px);
 }
-.hero-banner .eyebrow {
-  color: #67e8f9;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+div[data-testid="stToolbar"] { display: none !important; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.7rem 0;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(148,163,184,0.18);
 }
-.hero-banner .title {
-  font-size: 1.55rem;
+.page-header .title {
+  font-size: 1.25rem;
   font-weight: 700;
-  margin: 0.25rem 0;
+  color: #f8fafc;
+  margin: 0;
+}
+.page-header .subtitle {
+  color: #94a3b8;
+  font-size: 0.86rem;
+  margin: 0;
+}
+.thesis-line {
+  color: #a7f3d0;
+  font-size: 0.82rem;
+  margin: 0 0 0.75rem 0;
+  padding: 0.35rem 0 0.35rem 0.65rem;
+  border-left: 2px solid #10b981;
+}
+
+/* Keep class for compatibility, but make it compact */
+.hero-banner {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: 0 0 0.45rem 0;
+  margin-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(148,163,184,0.18);
+}
+.hero-banner .eyebrow { display: none; }
+.hero-banner .title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
   color: #f8fafc;
 }
-.hero-banner .subtitle { color: #cbd5e1; margin: 0; }
+.hero-banner .subtitle { color: #94a3b8; margin: 0.15rem 0 0 0; font-size: 0.86rem; }
 
 .status-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin: 0.8rem 0 1rem 0;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem 0;
 }
 .status-chip {
   border: 1px solid rgba(148,163,184,0.25);
   background: rgba(15,23,42,0.72);
   backdrop-filter: blur(8px);
-  border-radius: 12px;
-  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
 }
 .status-chip .label {
   color: #94a3b8;
@@ -164,9 +197,9 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; color: #f8fafc !important; }
 .pattern-tile {
   border: 1px solid rgba(148,163,184,0.22);
   background: linear-gradient(160deg, rgba(30,41,59,0.9), rgba(15,23,42,0.92));
-  border-radius: 14px;
-  padding: 0.85rem;
-  min-height: 220px;
+  border-radius: 12px;
+  padding: 0.7rem;
+  min-height: 180px;
 }
 .pattern-tile .name { font-weight: 700; color: #f8fafc; margin-bottom: 0.35rem; }
 .pattern-tile .scenario { color: #cbd5e1; font-size: 0.84rem; min-height: 3.2rem; }
@@ -258,6 +291,18 @@ def status_strip(chips: list[tuple[str, str]]) -> None:
         )
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
+
+
+def page_header(title: str, subtitle: str = "") -> None:
+    st.markdown(
+        f"""
+<div class="page-header">
+  <div class="title">{title}</div>
+  {"<div class='subtitle'>" + subtitle + "</div>" if subtitle else ""}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 CHART_LAYOUT = dict(

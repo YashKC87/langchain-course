@@ -9,21 +9,12 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app.observability.trace_store import get_trace_store
-from app.ui.theme import CHART_LAYOUT, callout, inject_theme, kpi_grid, provenance_badge
+from app.ui.theme import CHART_LAYOUT, callout, inject_theme, kpi_grid, page_header, provenance_badge
 
 
 def render_trace_explorer() -> None:
     inject_theme()
-    st.markdown(
-        """
-<div class="hero-banner">
-  <div class="eyebrow">Trace Explorer</div>
-  <div class="title">Distributed Execution Waterfall</div>
-  <p class="subtitle">Filter by pattern, model type, device, escalation, and fallback — then inspect span detail.</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    page_header("Trace Explorer", "Filter · waterfall · span detail")
     store = get_trace_store()
 
     c1, c2, c3, c4 = st.columns(4)
