@@ -15,9 +15,8 @@ from app.config import get_settings
 from app.data.generator import write_datasets
 from app.services.scenario_service import PATTERN_CATALOG, get_scenario_service
 from app.ui.architecture_components import render_kpi_row, render_pattern_page
-from app.ui.mlops_dashboard import render_langsmith_page, render_mlops_page
+from app.ui.mlops_dashboard import render_mlops_page
 from app.ui.theme import callout, inject_theme, page_header, status_strip
-from app.ui.trace_explorer import render_trace_explorer
 
 APP_NAME = "Right Model Lab"
 
@@ -40,9 +39,6 @@ PAGES = [
     "4 — RAG",
     "5 — Fallback",
     "AI Model Operations",
-    "LangSmith / LLMOps",
-    "Trace Explorer",
-    "Architecture",
     "Model Comparison",
 ]
 
@@ -207,45 +203,6 @@ def page_fallback() -> None:
     _run_and_render("fallback", failure_type=failure_type)
 
 
-def page_architecture() -> None:
-    page_header(APP_NAME, "Five patterns · one principle: use the right model for the right task")
-    st.code(
-        """
-                    DEVICE MONITORING
-                           |
-     ------------------------------------------------
-     |          |           |          |           |
-     v          v           v          v           v
- PLANNER      ROUTER     CONFIDENCE    RAG      FALLBACK
- WORKER                  CASCADE
-     |          |           |          |           |
-     v          v           v          v           v
- Frontier     SLM/F       SLM→F      KB+SLM      F→SLM
- +SLMs
-""",
-        language="text",
-    )
-    st.markdown("### Executive Model Analogy")
-    st.markdown(
-        """
-- **SLM** — Experienced Service Desk Engineer. Fast. Lower cost. Handles known/repetitive work.
-- **Frontier Model** — Senior Solution Architect. Stronger reasoning. Use for difficult or unfamiliar problems.
-- **Planner-Worker** — Architect plans; engineers execute routine checks; architect synthesizes RCA.
-- **Router** — Dispatcher sends easy work to Service Desk, hard work to Architect.
-- **Confidence Cascade** — Service Desk tries first; escalates only when uncertain.
-- **RAG** — Engineer checks the approved SOP before answering.
-- **Fallback** — Architect unavailable; local engineer continues with reduced capability.
-"""
-    )
-    for item in PATTERN_CATALOG:
-        with st.container():
-            st.markdown(f"#### {item['pattern']}")
-            st.write(item["scenario"])
-            st.write(f"- SLM role: {item['slm_role']}")
-            st.write(f"- Frontier role: {item['frontier_role']}")
-            st.write(f"- Primary benefit: {item['primary_benefit']}")
-
-
 def page_model_comparison() -> None:
     page_header(
         "Model Comparison",
@@ -293,7 +250,7 @@ def main() -> None:
     pending = st.session_state.pop("pending_nav_page", None)
     if pending in PAGES:
         st.session_state["nav_page"] = pending
-    if "nav_page" not in st.session_state:
+    if st.session_state.get("nav_page") not in PAGES:
         st.session_state["nav_page"] = "Overview"
     if "ui_theme" not in st.session_state:
         st.session_state["ui_theme"] = "Dark"
@@ -329,9 +286,6 @@ def main() -> None:
         "4 — RAG": page_rag,
         "5 — Fallback": page_fallback,
         "AI Model Operations": render_mlops_page,
-        "LangSmith / LLMOps": render_langsmith_page,
-        "Trace Explorer": render_trace_explorer,
-        "Architecture": page_architecture,
         "Model Comparison": page_model_comparison,
     }
     pages[page]()
