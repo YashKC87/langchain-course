@@ -1,109 +1,318 @@
-# SLM + Frontier Device Monitoring Patterns
+# Right Model Lab
 
-**Digital Workplace Device Monitoring Architecture Lab**
+**SLM + Frontier Device Monitoring Patterns**
 
-This repository is a complete working demonstration of how Small Language Models (SLMs) and Frontier Models collaborate using five enterprise architecture patterns.
+A complete, runnable lab that shows how Small Language Models (SLMs) and Frontier models work together for digital workplace device monitoring — using five enterprise architecture patterns, measurable token/cost/latency evidence, and optional LangSmith observability.
 
 Primary principle:
 
 > **Use the right model for the right task.**
 
-This lab does **not** try to replace Frontier models with SLMs. It shows where each creates value.
+This lab does **not** try to replace Frontier models with SLMs. It shows where each creates value: Frontier for planning, ambiguity, and synthesis; SLM for routine high-volume work.
 
 ---
 
-## What is an SLM?
+## Table of contents
 
-An SLM is a smaller language model — think of it as an experienced Service Desk Engineer.
-
-- Fast
-- Lower cost
-- Strong on known/repetitive work
-- Ideal for classification, extraction, telemetry interpretation, and routine summaries
-
-## What is a Frontier Model?
-
-A Frontier model is a highly capable large model — think of it as a Senior Solution Architect.
-
-- Stronger reasoning and planning
-- Better at ambiguity and cross-domain synthesis
-- More expensive and often slower
-- Best reserved for high-value reasoning segments
-
-## Why use both?
-
-Most digital workplace workflows contain both:
-
-1. routine high-volume steps, and
-2. a smaller number of difficult reasoning steps.
-
-Hybrid architecture protects Frontier capacity while preserving quality where it matters.
+1. [What this use case is](#1-what-this-use-case-is)
+2. [How the system is built](#2-how-the-system-is-built)
+3. [The five patterns](#3-the-five-patterns)
+4. [Project structure](#4-project-structure)
+5. [End-to-end request flow](#5-end-to-end-request-flow)
+6. [Model abstraction layer](#6-model-abstraction-layer)
+7. [Data, knowledge, and persistence](#7-data-knowledge-and-persistence)
+8. [Observability and metrics](#8-observability-and-metrics)
+9. [UI pages](#9-ui-pages)
+10. [Installation and run](#10-installation-and-run)
+11. [Configuration](#11-configuration)
+12. [Demo walkthrough](#12-demo-walkthrough)
+13. [API reference](#13-api-reference)
+14. [Tests, Docker, and export](#14-tests-docker-and-export)
+15. [Security](#15-security)
 
 ---
 
-## The five patterns (one scenario each)
+## 1. What this use case is
 
-| Pattern | Scenario | SLM role | Frontier role | Primary benefit |
+Digital workplace fleets generate a mix of:
+
+- **routine high-volume work** (health checks, known SOP remediation, simple status), and
+- **harder reasoning work** (multi-domain RCA, ambiguous symptoms, synthesis).
+
+Sending everything to a Frontier model wastes capacity and cost. Sending everything to an SLM risks quality on hard cases.
+
+**Right Model Lab** demonstrates a hybrid approach with five locked scenarios on a synthetic endpoint fleet (for example `LAPTOP-1204`, `LAPTOP-1507`, `LAPTOP-9910`).
+
+Executive analogy:
+
+| Model | Analogy | Best for |
+|---|---|---|
+| **SLM** | Experienced Service Desk Engineer | Fast, lower-cost, known/repetitive work |
+| **Frontier** | Senior Solution Architect | Planning, ambiguity, cross-domain synthesis |
+
+---
+
+## 2. How the system is built
+
+The lab is a Python 3.11 application with four layers:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  UI (Streamlit) — Right Model Lab                            │
+│  Overview · Architecture · AI Model Operations · Comparison  │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│  API / Orchestration                                         │
+│  FastAPI (app/main.py) + ScenarioService                     │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│  Pattern engines (one scenario each)                         │
+│  Planner-Worker · Router · Cascade · RAG · Fallback          │
+└───────────────┬─────────────────────────────┬───────────────┘
+                │                             │
+┌───────────────▼───────────────┐   ┌─────────▼───────────────┐
+│  LanguageModel interface      │   │  Observability          │
+│  Demo / Ollama SLM            │   │  TraceStore + LangSmith │
+│  Demo / Azure Frontier        │   │  TokenMetrics + cost    │
+└───────────────────────────────┘   └─────────────────────────┘
+```
+
+### Design choices baked into the build
+
+| Choice | Why it matters |
+|---|---|
+| One locked scenario per pattern | Keeps demos deterministic and explainable |
+| Shared `LanguageModel` interface | Patterns never import Azure/Ollama SDKs directly |
+| `DEMO_MODE` by default | Works with zero cloud credentials |
+| Provenance labels (`ACTUAL` / `SIMULATED` / `ESTIMATED`) | Prevents fake “savings” claims |
+| Estimated All-Frontier baseline | Compares hybrid vs all-Frontier **without** calling Frontier just for the baseline |
+| Primary metric = **Frontier tokens avoided** | Not “total tokens went down” |
+
+---
+
+## 3. The five patterns
+
+| Pattern | Locked scenario | SLM role | Frontier role | Primary benefit |
 |---|---|---|---|---|
-| Planner-Worker | Complete RCA for `LAPTOP-1204` | Routine workers | Plan + final RCA | Selective reasoning |
-| Router | Route 100 endpoint health requests | Routine requests | Complex requests | High-volume efficiency |
-| Confidence Cascade | Ambiguous Teams/VPN on `LAPTOP-9910` | First diagnosis | Escalate if unsure | Quality-aware escalation |
-| RAG | `LAPTOP-1507` disk + OneDrive SOP | Grounded answer | Not required | Knowledge + smaller model |
-| Fallback | Frontier unavailable during critical RCA | Degraded continuity | Primary path | Resilience/availability |
+| **Planner-Worker** | Complete RCA for `LAPTOP-1204` | Routine investigation workers | Plan + final RCA synthesis | Selective reasoning |
+| **Router** | Route 100 endpoint health requests | Routine health/status | Complex/ambiguous RCA | High-volume efficiency |
+| **Confidence Cascade** | Ambiguous Teams + VPN on `LAPTOP-9910` | First-pass diagnosis | Escalate when confidence is low | Quality-aware escalation |
+| **RAG** | `LAPTOP-1507` disk/OneDrive SOP remediation | Grounded generation from retrieved SOPs | Not required for this scenario | Grounded smaller-model answers |
+| **Fallback** | Critical RCA while Frontier is unavailable | Degraded continuity | Primary advanced path | Resilience / availability |
+
+Architecture flows (also rendered in the UI **Architecture** page):
+
+```
+Planner-Worker
+  Incident → FRONTIER Planner → SLM Workers (parallel) → FRONTIER RCA
+
+Router
+  Requests → NON-LLM Router → SLM (routine) | FRONTIER (complex)
+
+Confidence Cascade
+  Incident → SLM diagnosis → NON-LLM confidence gate → accept | FRONTIER escalate
+
+RAG
+  Ticket → NON-LLM retrieve/rank SOP → SLM grounded answer
+
+Fallback
+  Incident → FRONTIER attempt → NON-LLM failure detector → FRONTIER OK | SLM fallback
+```
+
+Fallback failure modes you can simulate: `http_503`, `timeout`, `rate_limit`, `auth_error`, `offline`, `cost_guard`.
 
 ---
 
-## How token consumption is measured
+## 4. Project structure
+
+```text
+.
+├── app/
+│   ├── config.py                 # Settings from .env (pydantic-settings)
+│   ├── main.py                   # FastAPI app
+│   ├── data/
+│   │   ├── generator.py          # Synthetic devices + incidents
+│   │   ├── devices.csv
+│   │   ├── incidents.csv
+│   │   └── knowledge_base/       # Markdown SOPs for RAG
+│   ├── models/
+│   │   ├── model_interface.py    # LanguageModel contract
+│   │   ├── factory.py            # Demo / Ollama / Azure wiring
+│   │   ├── slm_client.py         # Local SLM (Ollama-compatible)
+│   │   ├── frontier_client.py    # Azure OpenAI-compatible Frontier
+│   │   ├── demo_model.py         # Deterministic Demo clients
+│   │   └── schemas.py            # PatternResult, SegmentResult, etc.
+│   ├── patterns/
+│   │   ├── planner_worker.py
+│   │   ├── router.py
+│   │   ├── confidence_cascade.py
+│   │   ├── rag.py
+│   │   ├── fallback.py
+│   │   └── common.py             # Shared helpers / registry
+│   ├── services/
+│   │   ├── scenario_service.py   # Orchestrates pattern runs + MLOps KPIs
+│   │   ├── baseline_estimator.py # ESTIMATED all-Frontier baselines
+│   │   ├── telemetry.py
+│   │   ├── vector_store.py       # TF-IDF retrieval for RAG
+│   │   └── result_store.py       # Persist latest pattern results
+│   ├── observability/
+│   │   ├── langsmith_tracer.py   # Remote + local tracing
+│   │   ├── trace_store.py        # .local_traces.json
+│   │   ├── token_metrics.py
+│   │   └── cost_calculator.py    # Illustrative USD pricing
+│   └── ui/
+│       ├── dashboard.py          # Streamlit entrypoint
+│       ├── pattern_architecture.py
+│       ├── architecture_components.py
+│       ├── token_charts.py
+│       ├── mlops_dashboard.py
+│       ├── theme.py
+│       └── trace_explorer.py
+├── tests/                        # pytest suite (forced Demo Mode)
+├── docs/                         # Deeper docs + optional static HTML report
+├── scripts/export_static_report.py
+├── main.py                       # Convenience launcher: api | ui | data | test
+├── requirements.txt
+├── pyproject.toml
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## 5. End-to-end request flow
+
+When you click **Execute** on a pattern (or call the API):
+
+1. **UI / API** asks `ScenarioService.run_pattern(pattern_id)`.
+2. Service resolves the pattern class from `PATTERN_REGISTRY`.
+3. Pattern builds prompts/tasks for its locked scenario.
+4. Pattern calls SLM and/or Frontier through the `LanguageModel` interface.
+5. Each segment records tokens, latency, confidence, cost, and provenance.
+6. `LangSmithTracer` writes a parent/child span tree locally (and to LangSmith when configured).
+7. `BaselineEstimator` attaches an **ESTIMATED** all-Frontier comparison.
+8. `ResultStore` saves the latest `PatternResult` to `.local_pattern_results.json`.
+9. UI renders architecture flow, “why this model”, token charts, and the AI Architect decision.
+
+```text
+User → Streamlit/API → ScenarioService → Pattern.run()
+         → SLM/Frontier clients
+         → TraceStore (+ LangSmith)
+         → ResultStore
+         → Charts / Architecture / Comparison views
+```
+
+---
+
+## 6. Model abstraction layer
+
+Business logic never imports provider SDKs directly.
+
+```text
+LanguageModel (interface)
+├── DemoSLMClient / DemoFrontierClient     # DEMO_MODE or missing Azure config
+├── LocalSLMClient                         # Ollama-compatible HTTP API
+└── AzureFrontierClient                    # Azure OpenAI-compatible Converse/chat
+```
+
+Factory selection (`app/models/factory.py`) is driven by `.env`:
+
+- `DEMO_MODE=true` → always Demo clients (safe default)
+- `DEMO_MODE=false` + Ollama settings → live SLM
+- `DEMO_MODE=false` + complete Azure settings → live Frontier
+- Incomplete Azure Frontier config falls back to Demo Frontier so the app still runs
+
+---
+
+## 7. Data, knowledge, and persistence
+
+### Synthetic fleet
+
+`python -m app.data.generator` (also auto-runs on UI/API startup) creates:
+
+- `app/data/devices.csv` — endpoint fleet (seeded, deterministic)
+- `app/data/incidents.csv` — incident records for demos
+
+Special devices used by locked scenarios include `LAPTOP-1204`, `LAPTOP-1507`, and `LAPTOP-9910`.
+
+### Knowledge base (RAG)
+
+Markdown SOPs under `app/data/knowledge_base/` (disk, OneDrive, Teams, VPN, etc.) are indexed with a lightweight TF-IDF `VectorStore` — enough to demonstrate grounded retrieval without an external vector database.
+
+### Local persistence (gitignored)
+
+| File | Purpose |
+|---|---|
+| `.local_pattern_results.json` | Latest result per pattern (“Load latest saved result”) |
+| `.local_traces.json` | Local parent/child spans for MLOps views |
+
+---
+
+## 8. Observability and metrics
 
 Every segment records:
 
+- pattern / scenario / device / segment
+- model type (`SLM` | `FRONTIER` | `NON_LLM`) and role
 - input / output / total tokens
-- latency
-- confidence
-- estimated cost
-- provenance label:
-  - `ACTUAL` for provider telemetry
-  - `SIMULATED` for Demo Mode
-  - `ESTIMATED` for baselines/alternatives
+- latency, confidence, illustrative cost
+- escalation / fallback / retrieval metadata
+- provenance:
+  - **`ACTUAL`** — provider-reported usage
+  - **`SIMULATED`** — Demo Mode telemetry
+  - **`ESTIMATED`** — baseline or alternative projections (never shown as actual)
 
-Important metric:
+### Primary efficiency metric
 
-> **Frontier tokens avoided**
+> **Frontier tokens avoided** (hybrid vs ESTIMATED all-Frontier baseline)
 
-not merely “total tokens saved.”
+Fewer total tokens is **not** automatically better if quality collapses. The Confidence Cascade page intentionally shows cases where escalation can cost more than a direct Frontier call — fleet economics still matter.
 
-## Estimated All-Frontier baseline
+### LangSmith (optional)
 
-The app compares hybrid execution against an **ESTIMATED ALL-FRONTIER BASELINE**.
-
-It does **not** call Frontier just to invent that comparison. Baselines come from `BaselineEstimator` benchmarks and historical telemetry.
-
-## Why fewer tokens is not automatically better
-
-Example:
-
-- SLM: fewer tokens, faster, cheaper, but 61% confidence on complex RCA
-- Frontier: more tokens, slower, costlier, but 94% confidence
-
-Decision: Frontier — quality requirement justifies the extra inference.
-
-## What LangSmith does
-
-LangSmith (and the local LLMOps views) show:
-
-- which pattern/segment/model ran
-- parent/child execution
-- tokens, latency, cost, confidence
-- escalation and fallback events
-- retrieval metadata
-
-## What MLOps / LLMOps means here
-
-The **AI Model Operations** page visualizes model-selection decisions over time and by pattern: usage, avoidance, latency, cost, confidence, escalation, and fallback.
+When enabled, the same spans can stream to a LangSmith project. If LangSmith is off, local traces still power the AI Model Operations views.
 
 ---
 
-## Installation (Windows)
+## 9. UI pages
+
+Streamlit app brand: **Right Model Lab** (`streamlit run app/ui/dashboard.py`).
+
+| Page | What it shows |
+|---|---|
+| **Overview** | Fleet KPIs, pattern tiles, Run all / Open pattern detail (execute or load saved) |
+| **Architecture** | System context + clear SLM/FRONTIER/NON-LLM flow diagram for each pattern |
+| **AI Model Operations** | MLOps KPIs and interactive charts (usage, avoidance, latency, cost, confidence) |
+| **Model Comparison** | Selected hybrid vs alternative/estimated segments by pattern |
+
+Theme: Dark / Light toggle in the left sidebar.
+
+Pattern detail (from Overview → **Open**) includes:
+
+1. Architecture diagram for that pattern  
+2. Execute / Load latest saved result  
+3. Scenario context  
+4. Architecture flow of executed segments  
+5. Why this model  
+6. Token utilization vs ESTIMATED all-Frontier  
+7. Performance + AI Architect decision  
+
+---
+
+## 10. Installation and run
+
+### Prerequisites
+
+- Python **3.11+**
+- Optional: [Ollama](https://ollama.com) for local SLM
+- Optional: Azure OpenAI deployment for Frontier
+- Optional: LangSmith API key for remote tracing
+
+### Setup
+
+Windows:
 
 ```bat
 python -m venv .venv
@@ -121,31 +330,43 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-## Generate synthetic data
+### Generate data
 
 ```bash
 python -m app.data.generator
+# or
+python main.py data
 ```
 
-## Run the API
-
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-
-## Run the Streamlit app
+### Run the Streamlit UI
 
 ```bash
 streamlit run app/ui/dashboard.py
+# or
+python main.py ui
 ```
 
-## Run tests
+Open `http://localhost:8501`.
+
+### Run the FastAPI service
+
+```bash
+uvicorn app.main:app --reload --port 8000
+# or
+python main.py api
+```
+
+Open `http://localhost:8000/docs` for interactive OpenAPI docs.
+
+### Run tests
 
 ```bash
 pytest
+# or
+python main.py test
 ```
 
-Syntax validation:
+Syntax check:
 
 ```bash
 python -m compileall app tests
@@ -153,40 +374,38 @@ python -m compileall app tests
 
 ---
 
-## Demo Mode
+## 11. Configuration
 
-Default:
+Copy `.env.example` → `.env` and edit. Never commit `.env`.
+
+### Demo Mode (default)
 
 ```env
 DEMO_MODE=true
 ```
 
-Demo Mode:
+- No Azure, Ollama, or LangSmith required
+- Deterministic simulated results
+- Metrics labeled `SIMULATED`
 
-- needs no Azure, Ollama, or LangSmith
-- returns deterministic simulated results
-- labels metrics as `SIMULATED`
-
----
-
-## Ollama configuration (optional local SLM)
-
-1. Install Ollama
-2. Pull a model, for example: `ollama pull llama3.2`
-3. Configure `.env`:
+### Live local SLM (Ollama)
 
 ```env
 DEMO_MODE=false
 SLM_PROVIDER=ollama
 SLM_MODEL=llama3.2
 SLM_BASE_URL=http://localhost:11434
+SLM_TIMEOUT_SECONDS=180
 ```
 
-No specific model is hardcoded. Any Ollama-compatible model name can be used.
+```bash
+ollama pull llama3.2
+ollama serve
+```
 
----
+Any Ollama-compatible model name can be used — nothing is hardcoded beyond the example.
 
-## Azure Frontier configuration (optional)
+### Live Frontier (Azure OpenAI-compatible)
 
 ```env
 DEMO_MODE=false
@@ -198,11 +417,9 @@ AZURE_OPENAI_API_VERSION=2024-08-01-preview
 AZURE_OPENAI_DEPLOYMENT=YOUR_DEPLOYMENT
 ```
 
-Business logic never imports Azure SDK types directly. Patterns call the shared `LanguageModel` interface.
+Use the resource root endpoint (for example `https://YOUR_RESOURCE.openai.azure.com/`). Do not append `/openai/v1` — the client normalizes the Azure path.
 
----
-
-## LangSmith configuration (optional)
+### LangSmith (optional)
 
 ```env
 LANGSMITH_ENABLED=true
@@ -212,53 +429,65 @@ LANGSMITH_PROJECT=slm-frontier-device-monitoring
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 ```
 
-If LangSmith is disabled, local traces still power the LLMOps pages.
+### Other knobs
+
+```env
+CONFIDENCE_THRESHOLD=0.85
+ILLUSTRATIVE_SLM_INPUT_COST_PER_1K=0.0001
+ILLUSTRATIVE_SLM_OUTPUT_COST_PER_1K=0.0002
+ILLUSTRATIVE_FRONTIER_INPUT_COST_PER_1K=0.005
+ILLUSTRATIVE_FRONTIER_OUTPUT_COST_PER_1K=0.015
+```
+
+Pricing values are **illustrative USD per 1K tokens**, not market facts. Configure them to match your provider pricing for demos.
 
 ---
 
-## Demo walkthrough
+## 12. Demo walkthrough
 
-### 1) Planner-Worker
-Open **1 — Planner-Worker** → Execute → inspect Frontier plan/synthesis vs SLM workers and the “Why not Frontier for CPU?” callout.
+1. Start with `DEMO_MODE=true` and open the UI.
+2. On **Overview**, click **Run all patterns** (or open each tile → **Execute** / **Load latest saved result**).
+3. Open **Architecture** and walk each pattern’s SLM / Frontier / NON-LLM flow.
+4. Open **AI Model Operations** for avoidance, latency, cost, and confidence charts.
+5. Open **Model Comparison** for selected vs alternative segment tables.
 
-### 2) Router
-Open **2 — Router Pattern** → Execute → confirm ~85 SLM / ~15 Frontier and review routine vs complex examples.
+Pattern-specific checks:
 
-### 3) Confidence Cascade
-Open **3 — Confidence Cascade** → Execute → see SLM confidence 54% escalate, honest cascade-vs-direct token callout, then fleet economics.
+| Pattern | What to look for |
+|---|---|
+| Planner-Worker | Frontier plan + synthesis; SLM workers on routine domains |
+| Router | Roughly high SLM share vs smaller Frontier share across 100 requests |
+| Confidence Cascade | Low-confidence SLM escalates; honest cost vs direct-Frontier callout |
+| RAG | Retrieved SOP chunks + grounded SLM answer; Frontier not required |
+| Fallback | Choose a failure mode; SLM continues with degraded quality |
 
-### 4) RAG
-Open **4 — RAG** → Execute → review retrieved SOP chunks, citations, grounding, and RAG+SLM vs estimated RAG+Frontier.
-
-### 5) Fallback
-Open **5 — Fallback** → choose failure mode → Execute → confirm degraded SLM continuity and resiliency callout.
-
-Then open **AI Model Operations**, **LangSmith / LLMOps**, and **Trace Explorer**.
-
----
-
-## Screenshots
-
-> Placeholder: add UI screenshots for Overview, each pattern page, MLOps, and Trace Explorer before publishing a polished GitHub release.
+For live demos, prefer **Load latest saved result** first so the room is not waiting on multi-minute Ollama/Azure calls.
 
 ---
 
-## Project structure
+## 13. API reference
 
-See repository tree under `app/`, `tests/`, `docs/`, and `.github/workflows/`.
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Liveness |
+| `GET` | `/api/v1/config` | Public config / provider status (no secrets) |
+| `GET` | `/api/v1/patterns` | Pattern catalog |
+| `POST` | `/api/v1/patterns/{pattern_id}/run` | Run one pattern |
+| `POST` | `/api/v1/patterns/run-all` | Run all five |
+| `GET` | `/api/v1/devices` | Synthetic fleet |
+| `GET` | `/api/v1/overview` | Overview cards |
+| `GET` | `/api/v1/mlops` | MLOps dashboard payload |
+| `GET` | `/api/v1/traces` | Local trace listing |
 
-## Security
+---
 
-Never commit:
+## 14. Tests, Docker, and export
 
-- `.env`
-- API keys
-- LangSmith keys
-- Azure secrets
+### Tests
 
-`.gitignore` is configured accordingly.
+`tests/` covers planner-worker, router, confidence cascade, RAG, fallback, and token metrics. CI and local pytest force Demo Mode so runs stay offline and deterministic.
 
-## Docker
+### Docker
 
 ```bash
 docker compose up --build
@@ -267,29 +496,48 @@ docker compose up --build
 - API: `http://localhost:8000`
 - UI: `http://localhost:8501`
 
+### Static HTML report
+
+After you have saved pattern results:
+
+```bash
+PYTHONPATH=. python scripts/export_static_report.py
+```
+
+Writes `docs/right-model-lab-report.html` (no secrets).
+
+### Deeper docs
+
+| Doc | Topic |
+|---|---|
+| `docs/architecture.md` | Runtime architecture |
+| `docs/patterns.md` | Pattern/scenario notes |
+| `docs/model-selection.md` | Selection rationale |
+| `docs/langsmith-observability.md` | Tracing details |
+| `docs/ui-walkthrough.md` | UI section guide |
+
+---
+
+## 15. Security
+
+Never commit:
+
+- `.env`
+- Azure / LangSmith API keys
+- Local result or trace JSON if it contains sensitive demo content you do not want shared
+
+The UI and `/api/v1/config` expose **public status only** (provider names, model names, active flags) — secrets are never rendered.
+
+---
+
 ## License
 
 MIT
 
 ## Future enhancements
 
-- Azure AI Search retriever backend
-- Live Intune/DEX connectors
-- Richer LangSmith deep links per organization
+- Azure AI Search (or similar) retriever backend
+- Live Intune / DEX connectors
+- Richer per-org LangSmith deep links
 - Additional offline evaluation suites
 - Screenshot pack for GitHub social preview
-
----
-
-## Publish to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial SLM + Frontier device monitoring pattern lab"
-git branch -M main
-git remote add origin https://github.com/<your-org>/slm-frontier-device-monitoring-patterns.git
-git push -u origin main
-```
-
-If you are already inside this cloned workspace branch, use your normal branch push workflow instead.
