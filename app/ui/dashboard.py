@@ -342,7 +342,14 @@ def main() -> None:
     pages[page]()
 
 
-if __name__ == "__main__":
-    main()
-else:
+def _is_streamlit_runtime() -> bool:
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        return get_script_run_ctx() is not None
+    except Exception:  # noqa: BLE001
+        return False
+
+
+if __name__ == "__main__" or _is_streamlit_runtime():
     main()
