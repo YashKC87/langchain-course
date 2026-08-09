@@ -282,10 +282,11 @@ Streamlit app brand: **Right Model Lab** (`streamlit run app/ui/dashboard.py`).
 
 | Page | What it shows |
 |---|---|
-| **Overview** | Fleet KPIs, pattern tiles, Run all / Open pattern detail (execute or load saved) |
-| **Architecture** | System context + clear SLM/FRONTIER/NON-LLM flow diagram for each pattern |
+| **Overview** | Fleet KPIs, pattern tiles, Run all / Open pattern detail (architecture diagram + execute or load saved) |
 | **AI Model Operations** | MLOps KPIs and interactive charts (usage, avoidance, latency, cost, confidence) |
 | **Model Comparison** | Selected hybrid vs alternative/estimated segments by pattern |
+
+Video narration by dropdown page: [`docs/video-script.md`](docs/video-script.md).
 
 Theme: Dark / Light toggle in the left sidebar.
 
@@ -447,7 +448,7 @@ Pricing values are **illustrative USD per 1K tokens**, not market facts. Configu
 
 1. Start with `DEMO_MODE=true` and open the UI.
 2. On **Overview**, click **Run all patterns** (or open each tile → **Execute** / **Load latest saved result**).
-3. Open **Architecture** and walk each pattern’s SLM / Frontier / NON-LLM flow.
+3. Open a pattern tile to see its architecture diagram and run/load results.
 4. Open **AI Model Operations** for avoidance, latency, cost, and confidence charts.
 5. Open **Model Comparison** for selected vs alternative segment tables.
 
