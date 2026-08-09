@@ -189,7 +189,6 @@ def build_html() -> str:
 <body>
   <div class="wrap">
     <header class="hero">
-      <div class="eyebrow">Digital Workplace Device Monitoring</div>
       <h1>Right Model Lab</h1>
       <p class="subtitle">Static shareable report — use the right model for the right task.</p>
       <p class="muted">Generated { _esc(generated) } · Mode: {"DEMO" if status.get("demo_mode") else "LIVE"} · LangSmith: {"active" if status.get("langsmith_active") else "local-only"}</p>

@@ -64,7 +64,6 @@ def page_overview() -> None:
     st.markdown(
         f"""
 <div class="hero-banner">
-  <div class="eyebrow">Digital Workplace Device Monitoring</div>
   <div class="title">{APP_NAME}</div>
   <p class="subtitle">Use the right model for the right task — tokens, latency, cost, confidence, and LangSmith evidence.</p>
 </div>
