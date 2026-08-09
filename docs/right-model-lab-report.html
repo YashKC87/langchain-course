@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Right Model Lab — Static Demo Report</title>
+  <style>
+    :root {
+      --bg:#0b1220; --panel:#111827; --text:#e5e7eb; --muted:#94a3b8;
+      --cyan:#22d3ee; --green:#34d399; --blue:#60a5fa; --amber:#fbbf24; --line:rgba(148,163,184,.25);
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; font-family: Inter, Segoe UI, sans-serif; color:var(--text);
+      background: radial-gradient(900px 400px at 10% -10%, rgba(34,211,238,.12), transparent 50%),
+                  linear-gradient(180deg,#0b1220,#0f172a 60%,#111827);
+    }
+    .wrap { max-width:1200px; margin:0 auto; padding:1.25rem; }
+    .hero {
+      border:1px solid rgba(34,211,238,.35); border-radius:16px; padding:1.1rem 1.25rem;
+      background:linear-gradient(120deg, rgba(34,211,238,.14), rgba(16,185,129,.10));
+      margin-bottom:1rem;
+    }
+    .eyebrow { color:var(--cyan); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; }
+    h1 { margin:.2rem 0; font-size:1.8rem; }
+    .subtitle,.muted,.lead { color:var(--muted); }
+    .grid5,.grid4,.tiles { display:grid; gap:.7rem; }
+    .grid5 { grid-template-columns:repeat(5,minmax(0,1fr)); margin: .8rem 0; }
+    .grid4 { grid-template-columns:repeat(4,minmax(0,1fr)); margin: .8rem 0; }
+    .tiles { grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+    .kpi,.tile,.panel {
+      background:rgba(15,23,42,.72); border:1px solid var(--line); border-radius:14px; padding:.85rem;
+    }
+    .kpi .label,.tile .muted { color:var(--muted); font-size:.78rem; }
+    .kpi .value { font-size:1.2rem; font-weight:700; margin-top:.2rem; font-family: ui-monospace, monospace; }
+    .benefit { color:var(--green); font-weight:600; margin-top:.45rem; font-size:.85rem; }
+    table { width:100%; border-collapse:collapse; font-size:.86rem; }
+    th,td { border-bottom:1px solid var(--line); padding:.45rem .35rem; text-align:left; vertical-align:top; }
+    th { color:#cbd5e1; }
+    .badge { display:inline-block; border-radius:999px; padding:.1rem .45rem; font-size:.7rem; font-weight:700; }
+    .badge.slm { background:rgba(16,185,129,.18); color:#6ee7b7; }
+    .badge.frontier { background:rgba(59,130,246,.18); color:#93c5fd; }
+    .badge.non_llm { background:rgba(245,158,11,.16); color:#fcd34d; }
+    nav a { color:var(--cyan); margin-right:.8rem; text-decoration:none; font-size:.9rem; }
+    pre { white-space:pre-wrap; word-break:break-word; color:#cbd5e1; font-size:.78rem; }
+    @media (max-width:900px) {
+      .grid5,.grid4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Digital Workplace Device Monitoring</div>
+      <h1>Right Model Lab</h1>
+      <p class="subtitle">Static shareable report — use the right model for the right task.</p>
+      <p class="muted">Generated 2026-08-09 08:18 UTC · Mode: LIVE · LangSmith: active</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#patterns">Patterns</a>
+        <a href="#efficiency">Efficiency</a>
+        <a href="#spans">Spans</a>
+      </nav>
+    </header>
+
+    <section id="overview">
+      <h2>Overview KPIs</h2>
+      <div class="grid5">
+        <div class="kpi"><div class="label">Endpoints</div><div class="value">105</div></div>
+        <div class="kpi"><div class="label">Healthy / At Risk / Critical</div><div class="value">19 / 79 / 7</div></div>
+        <div class="kpi"><div class="label">SLM Calls</div><div class="value">580</div></div>
+        <div class="kpi"><div class="label">Frontier Calls</div><div class="value">138</div></div>
+        <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">319112</div></div>
+      </div>
+      <p class="muted">Illustrative pricing — configure using current provider pricing. Estimated cost avoided*: 2.707036</p>
+    </section>
+
+    <section id="patterns">
+      <h2>The Five Architecture Patterns</h2>
+      <div class="tiles">
+<article class="tile">
+  <h3>Planner-Worker Hierarchy</h3>
+  <p>Complete multi-domain RCA for LAPTOP-1204.</p>
+  <div class="muted"><b>SLM:</b> Execute routine investigation workers</div>
+  <div class="muted"><b>Frontier:</b> Plan investigation and synthesize final RCA</div>
+  <div class="benefit">Selective reasoning + orchestration efficiency</div>
+  <div class="muted">Last run: 2026-08-09T08:06:27.879767+00:00</div>
+</article>
+
+<article class="tile">
+  <h3>Router Pattern</h3>
+  <p>Route 100 incoming endpoint health requests between SLM and Frontier.</p>
+  <div class="muted"><b>SLM:</b> Routine health/status requests</div>
+  <div class="muted"><b>Frontier:</b> Complex/ambiguous RCA requests</div>
+  <div class="benefit">High-volume inference efficiency</div>
+  <div class="muted">Last run: 2026-08-09T08:06:28.720089+00:00</div>
+</article>
+
+<article class="tile">
+  <h3>Confidence Cascade</h3>
+  <p>Investigate ambiguous Teams + VPN instability on LAPTOP-9910.</p>
+  <div class="muted"><b>SLM:</b> First-pass diagnosis</div>
+  <div class="muted"><b>Frontier:</b> Escalation when confidence is low</div>
+  <div class="benefit">Quality-aware escalation</div>
+  <div class="muted">Last run: 2026-08-09T08:06:28.769685+00:00</div>
+</article>
+
+<article class="tile">
+  <h3>Retrieval-Augmented Generation (RAG)</h3>
+  <p>LAPTOP-1507 disk/OneDrive approved remediation via enterprise SOP.</p>
+  <div class="muted"><b>SLM:</b> Grounded generation from retrieved SOPs</div>
+  <div class="muted"><b>Frontier:</b> Not required for this SOP scenario</div>
+  <div class="benefit">Grounded enterprise knowledge with smaller model</div>
+  <div class="muted">Last run: 2026-08-09T08:06:28.831160+00:00</div>
+</article>
+
+<article class="tile">
+  <h3>Designing for Fallback</h3>
+  <p>Critical RCA continues when Frontier becomes unavailable.</p>
+  <div class="muted"><b>SLM:</b> Availability fallback with degraded quality</div>
+  <div class="muted"><b>Frontier:</b> Primary advanced reasoning path</div>
+  <div class="benefit">Resilience and availability</div>
+  <div class="muted">Last run: 2026-08-09T08:06:28.881816+00:00</div>
+</article>
+</div>
+    </section>
+
+    
+<section id="planner_worker">
+  <h2>Planner-Worker Hierarchy</h2>
+  <p class="lead">Complete multi-domain RCA for LAPTOP-1204.</p>
+  <div class="grid4">
+    <div class="kpi"><div class="label">SLM Calls</div><div class="value">5</div></div>
+    <div class="kpi"><div class="label">Frontier Calls</div><div class="value">2</div></div>
+    <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">11377 (90.2%)</div></div>
+    <div class="kpi"><div class="label">Hybrid Confidence</div><div class="value">93.8%</div></div>
+  </div>
+  <div class="panel">
+    <h3>AI Architect Decision</h3>
+    <p><b>Frontier used for:</b> Planning, RCA Synthesis</p>
+    <p><b>SLM used for:</b> CPU Analysis, Teams Analysis, Network/VPN Analysis, Compliance Analysis, History Analysis</p>
+    <p><b>Why:</b> Most individual analysis tasks are predictable. Advanced reasoning is only required for planning and final correlation.</p>
+    <p><b>Recommendation:</b> Use Frontier where advanced reasoning creates measurable value. Use SLM for routine execution where the quality difference does not justify Frontier latency and cost.</p>
+    <p class="muted">Hybrid tokens: 4594 · All-Frontier (ESTIMATED): 12620 · Cost avoided*: 0.097262</p>
+  </div>
+  <div class="panel">
+    <h3>Segment Ledger</h3>
+    <table>
+      <thead><tr><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Confidence</th><th>Provenance</th><th>Why</th></tr></thead>
+      <tbody><tr><td>Planning</td><td><span class='badge frontier'>FRONTIER</span></td><td>611</td><td>2296.8 ms</td><td>94.0%</td><td>SIMULATED</td><td>Complex task decomposition and planning.</td></tr>
+<tr><td>CPU Analysis</td><td><span class='badge slm'>SLM</span></td><td>678</td><td>561.0 ms</td><td>95.4%</td><td>SIMULATED</td><td>Routine telemetry analysis.</td></tr>
+<tr><td>Teams Analysis</td><td><span class='badge slm'>SLM</span></td><td>668</td><td>398.0 ms</td><td>94.4%</td><td>SIMULATED</td><td>Known telemetry interpretation.</td></tr>
+<tr><td>Network/VPN Analysis</td><td><span class='badge slm'>SLM</span></td><td>676</td><td>512.0 ms</td><td>92.1%</td><td>SIMULATED</td><td>Well-defined metrics and thresholds.</td></tr>
+<tr><td>Compliance Analysis</td><td><span class='badge slm'>SLM</span></td><td>666</td><td>442.0 ms</td><td>92.7%</td><td>SIMULATED</td><td>Rule-based interpretation.</td></tr>
+<tr><td>History Analysis</td><td><span class='badge slm'>SLM</span></td><td>663</td><td>321.0 ms</td><td>93.7%</td><td>SIMULATED</td><td>Straightforward summarization.</td></tr>
+<tr><td>RCA Synthesis</td><td><span class='badge frontier'>FRONTIER</span></td><td>632</td><td>2012.4 ms</td><td>94.0%</td><td>SIMULATED</td><td>Requires correlation across findings and advanced reasoning.</td></tr></tbody>
+    </table>
+  </div>
+  <details class="panel">
+    <summary>Comparison payload</summary>
+    <pre>{
+  &quot;selected_hybrid&quot;: {
+    &quot;slm_tokens&quot;: 3351,
+    &quot;frontier_tokens&quot;: 1243,
+    &quot;total_tokens&quot;: 4594
+  },
+  &quot;estimated_all_frontier&quot;: {
+    &quot;frontier_tokens&quot;: 12620,
+    &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+  },
+  &quot;frontier_tokens_avoided&quot;: 11377,
+  &quot;frontier_tokens_avoided_pct&quot;: 90.2,
+  &quot;cost_avoided&quot;: 0.097262,
+  &quot;latency_improvement_pct&quot;: 51.2,
+  &quot;quality_difference&quot;: -0.022
+}</pre>
+  </details>
+  <p class="muted">Trace ID: 910c3ecd20334d87b7bc5f30ccdf7e38</p>
+</section>
+
+<section id="router">
+  <h2>Router Pattern</h2>
+  <p class="lead">Route 100 incoming endpoint health requests between SLM and Frontier.</p>
+  <div class="grid4">
+    <div class="kpi"><div class="label">SLM Calls</div><div class="value">85</div></div>
+    <div class="kpi"><div class="label">Frontier Calls</div><div class="value">15</div></div>
+    <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">298291 (98.4%)</div></div>
+    <div class="kpi"><div class="label">Hybrid Confidence</div><div class="value">94.1%</div></div>
+  </div>
+  <div class="panel">
+    <h3>AI Architect Decision</h3>
+    <p><b>Frontier used for:</b> REQ-001, REQ-008, REQ-015, REQ-022, REQ-029, REQ-036, REQ-043, REQ-050, REQ-057, REQ-064, REQ-071, REQ-078, REQ-085, REQ-092, REQ-099</p>
+    <p><b>SLM used for:</b> REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-009, REQ-010, REQ-011, REQ-012, REQ-013, REQ-014, REQ-016, REQ-017, REQ-018, REQ-019, REQ-020, REQ-021, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028, REQ-030, REQ-031, REQ-032, REQ-033, REQ-034, REQ-035, REQ-037, REQ-038, REQ-039, REQ-040, REQ-041, REQ-042, REQ-044, REQ-045, REQ-046, REQ-047, REQ-048, REQ-049, REQ-051, REQ-052, REQ-053, REQ-054, REQ-055, REQ-056, REQ-058, REQ-059, REQ-060, REQ-061, REQ-062, REQ-063, REQ-065, REQ-066, REQ-067, REQ-068, REQ-069, REQ-070, REQ-072, REQ-073, REQ-074, REQ-075, REQ-076, REQ-077, REQ-079, REQ-080, REQ-081, REQ-082, REQ-083, REQ-084, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-093, REQ-094, REQ-095, REQ-096, REQ-097, REQ-098, REQ-100</p>
+    <p><b>Why:</b> We prevented routine requests from consuming Frontier capacity.</p>
+    <p><b>Recommendation:</b> Route high-volume routine endpoint health checks to SLM and reserve Frontier for complex/ambiguous RCA.</p>
+    <p class="muted">Hybrid tokens: 8662 · All-Frontier (ESTIMATED): 303000 · Cost avoided*: 2.528475</p>
+  </div>
+  <div class="panel">
+    <h3>Segment Ledger</h3>
+    <table>
+      <thead><tr><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Confidence</th><th>Provenance</th><th>Why</th></tr></thead>
+      <tbody><tr><td>Router</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>12.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Deterministic routing by request complexity class.</td></tr></tbody>
+    </table>
+  </div>
+  <details class="panel">
+    <summary>Comparison payload</summary>
+    <pre>{
+  &quot;selected_hybrid&quot;: {
+    &quot;slm_tokens&quot;: 3953,
+    &quot;frontier_tokens&quot;: 4709,
+    &quot;total_tokens&quot;: 8662
+  },
+  &quot;estimated_all_frontier&quot;: {
+    &quot;frontier_tokens&quot;: 303000,
+    &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+  },
+  &quot;frontier_tokens_avoided&quot;: 298291,
+  &quot;frontier_tokens_avoided_pct&quot;: 98.4,
+  &quot;cost_avoided&quot;: 2.528475,
+  &quot;latency_improvement_pct&quot;: 74.8,
+  &quot;quality_difference&quot;: -0.016,
+  &quot;slm_requests&quot;: 85,
+  &quot;frontier_requests&quot;: 15,
+  &quot;avg_slm_tokens&quot;: 46.5,
+  &quot;avg_frontier_tokens&quot;: 313.9,
+  &quot;p50_latency_ms&quot;: 407.0,
+  &quot;p95_latency_ms&quot;: 2125.8,
+  &quot;frontier_calls_avoided&quot;: 85,
+  &quot;frontier_avoidance_rate&quot;: 85.0,
+  &quot;examples&quot;: {
+    &quot;routine&quot;: {
+      &quot;request_id&quot;: &quot;REQ-002&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0002&quot;,
+      &quot;request_type&quot;: &quot;disk_status&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 46,
+      &quot;latency_ms&quot;: 230.0,
+      &quot;confidence&quot;: 0.951,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    &quot;complex&quot;: {
+      &quot;request_id&quot;: &quot;REQ-001&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0001&quot;,
+      &quot;request_type&quot;: &quot;ambiguous_telemetry&quot;,
+      &quot;complexity&quot;: &quot;complex&quot;,
+      &quot;selected_model&quot;: &quot;FRONTIER&quot;,
+      &quot;tokens&quot;: 313,
+      &quot;latency_ms&quot;: 2097.0,
+      &quot;confidence&quot;: 0.94,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;SLM&quot;,
+        &quot;model_name&quot;: &quot;estimated::slm&quot;,
+        &quot;expected_tokens&quot;: 1120,
+        &quot;expected_latency_ms&quot;: 700.0,
+        &quot;expected_confidence&quot;: 0.61,
+        &quot;expected_cost&quot;: 0.000151,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;FRONTIER&quot;,
+        &quot;rationale&quot;: &quot;SLM alternative may be cheaper/faster but can lack required reasoning quality.&quot;
+      }
+    }
+  },
+  &quot;requests_preview&quot;: [
+    {
+      &quot;request_id&quot;: &quot;REQ-001&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0001&quot;,
+      &quot;request_type&quot;: &quot;ambiguous_telemetry&quot;,
+      &quot;complexity&quot;: &quot;complex&quot;,
+      &quot;selected_model&quot;: &quot;FRONTIER&quot;,
+      &quot;tokens&quot;: 313,
+      &quot;latency_ms&quot;: 2097.0,
+      &quot;confidence&quot;: 0.94,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;SLM&quot;,
+        &quot;model_name&quot;: &quot;estimated::slm&quot;,
+        &quot;expected_tokens&quot;: 1120,
+        &quot;expected_latency_ms&quot;: 700.0,
+        &quot;expected_confidence&quot;: 0.61,
+        &quot;expected_cost&quot;: 0.000151,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;FRONTIER&quot;,
+        &quot;rationale&quot;: &quot;SLM alternative may be cheaper/faster but can lack required reasoning quality.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-002&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0002&quot;,
+      &quot;request_type&quot;: &quot;disk_status&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 46,
+      &quot;latency_ms&quot;: 230.0,
+      &quot;confidence&quot;: 0.951,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-003&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0003&quot;,
+      &quot;request_type&quot;: &quot;teams_crash_count&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 47,
+      &quot;latency_ms&quot;: 360.0,
+      &quot;confidence&quot;: 0.925,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-004&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0004&quot;,
+      &quot;request_type&quot;: &quot;simple_health_classification&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 47,
+      &quot;latency_ms&quot;: 206.0,
+      &quot;confidence&quot;: 0.943,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-005&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0005&quot;,
+      &quot;request_type&quot;: &quot;compliance_status&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 46,
+      &quot;latency_ms&quot;: 214.0,
+      &quot;confidence&quot;: 0.95,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-006&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0006&quot;,
+      &quot;request_type&quot;: &quot;cpu_status&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 46,
+      &quot;latency_ms&quot;: 181.0,
+      &quot;confidence&quot;: 0.944,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-007&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0007&quot;,
+      &quot;request_type&quot;: &quot;vpn_disconnect_count&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 47,
+      &quot;latency_ms&quot;: 204.0,
+      &quot;confidence&quot;: 0.957,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-008&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0008&quot;,
+      &quot;request_type&quot;: &quot;novel_problem&quot;,
+      &quot;complexity&quot;: &quot;complex&quot;,
+      &quot;selected_model&quot;: &quot;FRONTIER&quot;,
+      &quot;tokens&quot;: 313,
+      &quot;latency_ms&quot;: 2055.6,
+      &quot;confidence&quot;: 0.94,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;SLM&quot;,
+        &quot;model_name&quot;: &quot;estimated::slm&quot;,
+        &quot;expected_tokens&quot;: 1120,
+        &quot;expected_latency_ms&quot;: 700.0,
+        &quot;expected_confidence&quot;: 0.61,
+        &quot;expected_cost&quot;: 0.000151,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;FRONTIER&quot;,
+        &quot;rationale&quot;: &quot;SLM alternative may be cheaper/faster but can lack required reasoning quality.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-009&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0009&quot;,
+      &quot;request_type&quot;: &quot;teams_crash_count&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 47,
+      &quot;latency_ms&quot;: 541.0,
+      &quot;confidence&quot;: 0.931,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    },
+    {
+      &quot;request_id&quot;: &quot;REQ-010&quot;,
+      &quot;device_id&quot;: &quot;LAPTOP-0010&quot;,
+      &quot;request_type&quot;: &quot;simple_health_classification&quot;,
+      &quot;complexity&quot;: &quot;routine&quot;,
+      &quot;selected_model&quot;: &quot;SLM&quot;,
+      &quot;tokens&quot;: 47,
+      &quot;latency_ms&quot;: 286.0,
+      &quot;confidence&quot;: 0.947,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;,
+      &quot;alternative&quot;: {
+        &quot;model_type&quot;: &quot;FRONTIER&quot;,
+        &quot;model_name&quot;: &quot;estimated::gpt-4o&quot;,
+        &quot;expected_tokens&quot;: 3000,
+        &quot;expected_latency_ms&quot;: 2400.0,
+        &quot;expected_confidence&quot;: 0.96,
+        &quot;expected_cost&quot;: 0.0255,
+        &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+        &quot;recommendation&quot;: &quot;SLM&quot;,
+        &quot;rationale&quot;: &quot;Frontier quality gain is often marginal for routine telemetry tasks.&quot;
+      }
+    }
+  ],
+  &quot;requests_all_count&quot;: 100
+}</pre>
+  </details>
+  <p class="muted">Trace ID: 8a55270a2cbd4befa77f612762e26e12</p>
+</section>
+
+<section id="confidence_cascade">
+  <h2>Confidence Cascade</h2>
+  <p class="lead">Investigate ambiguous Teams + VPN instability on LAPTOP-9910.</p>
+  <div class="grid4">
+    <div class="kpi"><div class="label">SLM Calls</div><div class="value">1</div></div>
+    <div class="kpi"><div class="label">Frontier Calls</div><div class="value">1</div></div>
+    <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">2844 (79.0%)</div></div>
+    <div class="kpi"><div class="label">Hybrid Confidence</div><div class="value">74.0%</div></div>
+  </div>
+  <div class="panel">
+    <h3>AI Architect Decision</h3>
+    <p><b>Frontier used for:</b> FRONTIER RCA</p>
+    <p><b>SLM used for:</b> SLM Initial Diagnosis</p>
+    <p><b>Why:</b> We let the SLM solve easy incidents and escalated only uncertain cases.</p>
+    <p><b>Recommendation:</b> Use Confidence Cascade for mixed-difficulty fleets. Accept that an individual escalation can exceed direct Frontier tokens while preserving fleet-level savings.</p>
+    <p class="muted">Hybrid tokens: 1015 · All-Frontier (ESTIMATED): 3600 · Cost avoided*: 0.025263</p>
+  </div>
+  <div class="panel">
+    <h3>Segment Ledger</h3>
+    <table>
+      <thead><tr><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Confidence</th><th>Provenance</th><th>Why</th></tr></thead>
+      <tbody><tr><td>SLM Initial Diagnosis</td><td><span class='badge slm'>SLM</span></td><td>259</td><td>401.0 ms</td><td>54.0%</td><td>SIMULATED</td><td>Try inexpensive local diagnosis first.</td></tr>
+<tr><td>Confidence Evaluator</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>5.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Compare SLM confidence against configured threshold.</td></tr>
+<tr><td>Escalation Decision</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>2.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Policy: escalate when confidence &lt; threshold.</td></tr>
+<tr><td>FRONTIER RCA</td><td><span class='badge frontier'>FRONTIER</span></td><td>756</td><td>1886.4 ms</td><td>94.0%</td><td>SIMULATED</td><td>Resolve ambiguity with advanced reasoning.</td></tr></tbody>
+    </table>
+  </div>
+  <details class="panel">
+    <summary>Comparison payload</summary>
+    <pre>{
+  &quot;selected_hybrid&quot;: {
+    &quot;slm_tokens&quot;: 259,
+    &quot;frontier_tokens&quot;: 756,
+    &quot;total_tokens&quot;: 1015
+  },
+  &quot;estimated_all_frontier&quot;: {
+    &quot;frontier_tokens&quot;: 3600,
+    &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+  },
+  &quot;frontier_tokens_avoided&quot;: 2844,
+  &quot;frontier_tokens_avoided_pct&quot;: 79.0,
+  &quot;cost_avoided&quot;: 0.025263,
+  &quot;latency_improvement_pct&quot;: 15.3,
+  &quot;quality_difference&quot;: -0.2,
+  &quot;options&quot;: [
+    {
+      &quot;name&quot;: &quot;SLM ONLY&quot;,
+      &quot;tokens&quot;: 259,
+      &quot;latency_ms&quot;: 401.0,
+      &quot;confidence&quot;: 0.54,
+      &quot;result&quot;: &quot;Fast and inexpensive but potentially unreliable.&quot;,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;
+    },
+    {
+      &quot;name&quot;: &quot;FRONTIER ONLY&quot;,
+      &quot;tokens&quot;: 3600,
+      &quot;latency_ms&quot;: 2700.0,
+      &quot;confidence&quot;: 0.94,
+      &quot;result&quot;: &quot;Strong answer but uses Frontier for every incident.&quot;,
+      &quot;provenance&quot;: &quot;ESTIMATED&quot;,
+      &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+    },
+    {
+      &quot;name&quot;: &quot;CONFIDENCE CASCADE&quot;,
+      &quot;tokens&quot;: 1015,
+      &quot;latency_ms&quot;: 2294.4,
+      &quot;confidence&quot;: 0.94,
+      &quot;result&quot;: &quot;SLM first; Frontier only when confidence is low. Cascade stayed near direct Frontier cost for this incident.&quot;,
+      &quot;provenance&quot;: &quot;SIMULATED+ESTIMATED&quot;,
+      &quot;slm_attempt_tokens&quot;: 259,
+      &quot;frontier_escalation_tokens&quot;: 756
+    }
+  ],
+  &quot;cascade_tokens&quot;: 1015,
+  &quot;direct_frontier_tokens&quot;: 3600,
+  &quot;cascade_exceeds_direct_frontier&quot;: false,
+  &quot;callout&quot;: &quot;Cascade did not exceed direct Frontier on this incident.&quot;,
+  &quot;fleet_economics&quot;: {
+    &quot;incidents&quot;: 100,
+    &quot;solved_by_slm&quot;: 80,
+    &quot;escalated_to_frontier&quot;: 20,
+    &quot;all_frontier_tokens&quot;: 360000,
+    &quot;cascade_tokens&quot;: 41020,
+    &quot;frontier_tokens_avoided&quot;: 344880,
+    &quot;note&quot;: &quot;Fleet view: 100 \u00d7 Frontier versus 80 \u00d7 SLM + 20 \u00d7 (SLM + Frontier). Cascade value appears at fleet scale even if one escalation is heavier.&quot;,
+    &quot;provenance&quot;: &quot;ESTIMATED&quot;
+  },
+  &quot;initial_confidence&quot;: 0.54,
+  &quot;threshold&quot;: 0.85,
+  &quot;escalated&quot;: true,
+  &quot;final_confidence&quot;: 0.94
+}</pre>
+  </details>
+  <p class="muted">Trace ID: e056a499b30744e8853b4c463adc3ecb</p>
+</section>
+
+<section id="rag">
+  <h2>Retrieval-Augmented Generation (RAG)</h2>
+  <p class="lead">LAPTOP-1507 has low disk space and OneDrive errors. Determine the approved remediation using the enterprise SOP.</p>
+  <div class="grid4">
+    <div class="kpi"><div class="label">SLM Calls</div><div class="value">1</div></div>
+    <div class="kpi"><div class="label">Frontier Calls</div><div class="value">0</div></div>
+    <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">3400 (100.0%)</div></div>
+    <div class="kpi"><div class="label">Hybrid Confidence</div><div class="value">91.0%</div></div>
+  </div>
+  <div class="panel">
+    <h3>AI Architect Decision</h3>
+    <p><b>Frontier used for:</b> None</p>
+    <p><b>SLM used for:</b> SLM Grounded Generation</p>
+    <p><b>Why:</b> We supplied trusted enterprise knowledge to a smaller model rather than using a bigger model to compensate for missing knowledge.</p>
+    <p><b>Recommendation:</b> Use RAG + SLM for SOP-grounded remediation. Frontier adds limited value when retrieval already provides approved steps.</p>
+    <p class="muted">Hybrid tokens: 378 · All-Frontier (ESTIMATED): 3400 · Cost avoided*: 0.028857</p>
+  </div>
+  <div class="panel">
+    <h3>Segment Ledger</h3>
+    <table>
+      <thead><tr><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Confidence</th><th>Provenance</th><th>Why</th></tr></thead>
+      <tbody><tr><td>Query Analysis</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>8.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Parse user question and telemetry intent.</td></tr>
+<tr><td>Retrieval</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>35.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Retrieve approved SOP chunks; retrieval does not need Frontier.</td></tr>
+<tr><td>Document Ranking</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>10.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Rank chunks by cosine similarity.</td></tr>
+<tr><td>Context Construction</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>7.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Build grounded prompt context from top SOP chunks + telemetry.</td></tr>
+<tr><td>SLM Grounded Generation</td><td><span class='badge slm'>SLM</span></td><td>378</td><td>565.0 ms</td><td>91.0%</td><td>SIMULATED</td><td>Retrieval supplied enterprise knowledge; generation is relatively simple.</td></tr></tbody>
+    </table>
+  </div>
+  <details class="panel">
+    <summary>Comparison payload</summary>
+    <pre>{
+  &quot;selected_hybrid&quot;: {
+    &quot;slm_tokens&quot;: 378,
+    &quot;frontier_tokens&quot;: 0,
+    &quot;total_tokens&quot;: 378
+  },
+  &quot;estimated_all_frontier&quot;: {
+    &quot;frontier_tokens&quot;: 3400,
+    &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+  },
+  &quot;frontier_tokens_avoided&quot;: 3400,
+  &quot;frontier_tokens_avoided_pct&quot;: 100.0,
+  &quot;cost_avoided&quot;: 0.028857,
+  &quot;latency_improvement_pct&quot;: 77.4,
+  &quot;quality_difference&quot;: -0.04,
+  &quot;query_tokens&quot;: 34,
+  &quot;retrieved_context_tokens&quot;: 106,
+  &quot;slm_input_tokens&quot;: 323,
+  &quot;slm_output_tokens&quot;: 55,
+  &quot;total_llm_tokens&quot;: 378,
+  &quot;retrieval_latency_ms&quot;: 35.0,
+  &quot;generation_latency_ms&quot;: 565.0,
+  &quot;end_to_end_latency_ms&quot;: 625.0,
+  &quot;grounding_score&quot;: 0.341,
+  &quot;retrieved_documents&quot;: [
+    &quot;disk_remediation.md&quot;,
+    &quot;onedrive_troubleshooting.md&quot;,
+    &quot;patch_management.md&quot;
+  ],
+  &quot;retrieved_chunks&quot;: [
+    {
+      &quot;document_id&quot;: &quot;disk_remediation.md&quot;,
+      &quot;document_name&quot;: &quot;disk_remediation.md&quot;,
+      &quot;chunk_id&quot;: &quot;disk_remediation.md::chunk-0&quot;,
+      &quot;text&quot;: &quot;# Disk Space Remediation SOP&quot;,
+      &quot;score&quot;: 0.4777
+    },
+    {
+      &quot;document_id&quot;: &quot;patch_management.md&quot;,
+      &quot;document_name&quot;: &quot;patch_management.md&quot;,
+      &quot;chunk_id&quot;: &quot;patch_management.md::chunk-1&quot;,
+      &quot;text&quot;: &quot;## Purpose\nKeep Digital Workplace endpoints within approved patch SLAs.&quot;,
+      &quot;score&quot;: 0.3214
+    },
+    {
+      &quot;document_id&quot;: &quot;disk_remediation.md&quot;,
+      &quot;document_name&quot;: &quot;disk_remediation.md&quot;,
+      &quot;chunk_id&quot;: &quot;disk_remediation.md::chunk-1&quot;,
+      &quot;text&quot;: &quot;## Purpose\nRecover endpoints with critically low free disk space.&quot;,
+      &quot;score&quot;: 0.3056
+    },
+    {
+      &quot;document_id&quot;: &quot;onedrive_troubleshooting.md&quot;,
+      &quot;document_name&quot;: &quot;onedrive_troubleshooting.md&quot;,
+      &quot;chunk_id&quot;: &quot;onedrive_troubleshooting.md::chunk-1&quot;,
+      &quot;text&quot;: &quot;## Purpose\nRestore OneDrive synchronization for corporate files on Windows endpoints.&quot;,
+      &quot;score&quot;: 0.2595
+    }
+  ],
+  &quot;citations&quot;: [
+    &quot;disk_remediation.md&quot;,
+    &quot;patch_management.md&quot;,
+    &quot;disk_remediation.md&quot;,
+    &quot;onedrive_troubleshooting.md&quot;
+  ],
+  &quot;rag_slm_vs_rag_frontier&quot;: {
+    &quot;RAG + SLM&quot;: {
+      &quot;input_tokens&quot;: 323,
+      &quot;output_tokens&quot;: 55,
+      &quot;total_tokens&quot;: 378,
+      &quot;latency_ms&quot;: 565.0,
+      &quot;cost&quot;: 4.3e-05,
+      &quot;grounding&quot;: 0.341,
+      &quot;quality&quot;: 0.91,
+      &quot;provenance&quot;: &quot;SIMULATED&quot;
+    },
+    &quot;RAG + FRONTIER&quot;: {
+      &quot;input_tokens&quot;: 2210,
+      &quot;output_tokens&quot;: 1190,
+      &quot;total_tokens&quot;: 3400,
+      &quot;latency_ms&quot;: 2500.0,
+      &quot;cost&quot;: 0.0289,
+      &quot;grounding&quot;: 0.341,
+      &quot;quality&quot;: 0.95,
+      &quot;provenance&quot;: &quot;ESTIMATED&quot;
+    }
+  },
+  &quot;callout&quot;: &quot;WHY SLM? Retrieval supplied the domain knowledge. The generation task is relatively simple. Frontier reasoning adds limited value for this scenario.&quot;
+}</pre>
+  </details>
+  <p class="muted">Trace ID: 59dd90b10182431a97a29020df7c8dbe</p>
+</section>
+
+<section id="fallback">
+  <h2>Designing for Fallback</h2>
+  <p class="lead">A critical endpoint requires advanced RCA but the Frontier service becomes unavailable.</p>
+  <div class="grid4">
+    <div class="kpi"><div class="label">SLM Calls</div><div class="value">1</div></div>
+    <div class="kpi"><div class="label">Frontier Calls</div><div class="value">0</div></div>
+    <div class="kpi"><div class="label">Frontier Tokens Avoided</div><div class="value">3200 (100.0%)</div></div>
+    <div class="kpi"><div class="label">Hybrid Confidence</div><div class="value">72.0%</div></div>
+  </div>
+  <div class="panel">
+    <h3>AI Architect Decision</h3>
+    <p><b>Frontier used for:</b> None</p>
+    <p><b>SLM used for:</b> SLM Fallback</p>
+    <p><b>Why:</b> When Frontier became unavailable, the local SLM maintained service with reduced reasoning capability.</p>
+    <p><b>Recommendation:</b> Design explicit fallback. Fallback is primarily a resiliency pattern, not a token optimization pattern.</p>
+    <p class="muted">Hybrid tokens: 177 · All-Frontier (ESTIMATED): 3200 · Cost avoided*: 0.027179</p>
+  </div>
+  <div class="panel">
+    <h3>Segment Ledger</h3>
+    <table>
+      <thead><tr><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Confidence</th><th>Provenance</th><th>Why</th></tr></thead>
+      <tbody><tr><td>FRONTIER Attempt</td><td><span class='badge frontier'>FRONTIER</span></td><td>0</td><td>0.0 ms</td><td>0.0%</td><td>SIMULATED</td><td>Primary advanced reasoning path for critical RCA.</td></tr>
+<tr><td>Failure Detector</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>4.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Detect Frontier transport/service failures.</td></tr>
+<tr><td>Fallback Decision</td><td><span class='badge non_llm'>NON_LLM</span></td><td>0</td><td>3.0 ms</td><td>100.0%</td><td>SIMULATED</td><td>Route to local SLM to preserve availability.</td></tr>
+<tr><td>SLM Fallback</td><td><span class='badge slm'>SLM</span></td><td>177</td><td>250.0 ms</td><td>72.0%</td><td>SIMULATED</td><td>Local SLM preserves operational capability during Frontier outage.</td></tr></tbody>
+    </table>
+  </div>
+  <details class="panel">
+    <summary>Comparison payload</summary>
+    <pre>{
+  &quot;selected_hybrid&quot;: {
+    &quot;slm_tokens&quot;: 177,
+    &quot;frontier_tokens&quot;: 0,
+    &quot;total_tokens&quot;: 177
+  },
+  &quot;estimated_all_frontier&quot;: {
+    &quot;frontier_tokens&quot;: 3200,
+    &quot;label&quot;: &quot;ESTIMATED ALL-FRONTIER BASELINE&quot;
+  },
+  &quot;frontier_tokens_avoided&quot;: 3200,
+  &quot;frontier_tokens_avoided_pct&quot;: 100.0,
+  &quot;cost_avoided&quot;: 0.027179,
+  &quot;latency_improvement_pct&quot;: 91.1,
+  &quot;quality_difference&quot;: -0.22,
+  &quot;normal_frontier&quot;: {
+    &quot;tokens&quot;: 3200,
+    &quot;latency_ms&quot;: 2800.0,
+    &quot;confidence&quot;: 0.94,
+    &quot;quality&quot;: &quot;High&quot;,
+    &quot;provenance&quot;: &quot;ESTIMATED&quot;
+  },
+  &quot;frontier_failure_slm&quot;: {
+    &quot;failed_frontier_tokens&quot;: 0,
+    &quot;slm_tokens&quot;: 177,
+    &quot;fallback_latency_ms&quot;: 250.0,
+    &quot;confidence&quot;: 0.72,
+    &quot;quality&quot;: &quot;Degraded but usable&quot;,
+    &quot;availability&quot;: &quot;Maintained&quot;,
+    &quot;time_to_failure_ms&quot;: 0.0,
+    &quot;total_recovery_time_ms&quot;: 257.0,
+    &quot;failure_type&quot;: &quot;http_503&quot;,
+    &quot;provenance&quot;: &quot;SIMULATED&quot;
+  },
+  &quot;callout&quot;: &quot;Fallback is NOT primarily a token optimization pattern. PRIMARY BENEFIT: RESILIENCY + AVAILABILITY. SLM fallback preserves operational capability but may provide lower-quality reasoning than the primary Frontier model.&quot;,
+  &quot;ui_controls&quot;: [
+    &quot;auth_error&quot;,
+    &quot;cost_guard&quot;,
+    &quot;http_503&quot;,
+    &quot;offline&quot;,
+    &quot;rate_limit&quot;,
+    &quot;timeout&quot;
+  ]
+}</pre>
+  </details>
+  <p class="muted">Trace ID: c486619a24ea41f7a12f427a9b74b6a1</p>
+</section>
+
+
+    <section id="efficiency">
+      <h2>Pattern Efficiency Table</h2>
+      <div class="panel">
+        <table>
+          <thead><tr><th>Pattern</th><th>SLM Calls</th><th>Frontier Calls</th><th>SLM Tokens</th><th>Frontier Tokens</th><th>Frontier Tokens Avoided</th><th>Confidence</th><th>Primary Benefit</th></tr></thead>
+          <tbody><tr><td>Retrieval-Augmented Generation (RAG)</td><td>1</td><td>0</td><td>378</td><td>0</td><td>3400</td><td>0.91</td><td>Grounded enterprise knowledge with smaller model</td></tr><tr><td>Confidence Cascade</td><td>1</td><td>1</td><td>259</td><td>756</td><td>2844</td><td>0.74</td><td>Quality-aware escalation</td></tr><tr><td>Designing for Fallback</td><td>1</td><td>0</td><td>177</td><td>0</td><td>3200</td><td>0.72</td><td>Resilience and availability</td></tr><tr><td>Planner-Worker Hierarchy</td><td>5</td><td>2</td><td>3351</td><td>1243</td><td>11377</td><td>0.938</td><td>Selective reasoning + orchestration efficiency</td></tr><tr><td>Router Pattern</td><td>85</td><td>15</td><td>3953</td><td>4709</td><td>298291</td><td>0.941</td><td>High-volume inference efficiency</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="spans">
+      <h2>Recent Local Spans</h2>
+      <div class="panel">
+        <table>
+          <thead><tr><th>Trace</th><th>Pattern</th><th>Segment</th><th>Model Type</th><th>Tokens</th><th>Latency</th><th>Provenance</th></tr></thead>
+          <tbody><tr><td>c486619a24</td><td>Designing for Fallback</td><td>SLM Fallback</td><td>SLM</td><td>177</td><td>250.0</td><td>SIMULATED</td></tr><tr><td>c486619a24</td><td>Designing for Fallback</td><td>Fallback Decision</td><td>NON_LLM</td><td>0</td><td>3.0</td><td>SIMULATED</td></tr><tr><td>c486619a24</td><td>Designing for Fallback</td><td>Failure Detector</td><td>NON_LLM</td><td>0</td><td>4.0</td><td>SIMULATED</td></tr><tr><td>c486619a24</td><td>Designing for Fallback</td><td>FRONTIER Attempt</td><td>FRONTIER</td><td>0</td><td>0.0</td><td>SIMULATED</td></tr><tr><td>c486619a24</td><td>Designing for Fallback</td><td>root</td><td>NON_LLM</td><td>0</td><td>0.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>SLM Grounded Generation</td><td>SLM</td><td>378</td><td>565.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>Context Construction</td><td>NON_LLM</td><td>0</td><td>7.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>Document Ranking</td><td>NON_LLM</td><td>0</td><td>10.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>Retrieval</td><td>NON_LLM</td><td>0</td><td>35.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>Query Analysis</td><td>NON_LLM</td><td>0</td><td>8.0</td><td>SIMULATED</td></tr><tr><td>59dd90b101</td><td>Retrieval-Augmented Generation (RAG)</td><td>root</td><td>NON_LLM</td><td>0</td><td>0.0</td><td>SIMULATED</td></tr><tr><td>e056a499b3</td><td>Confidence Cascade</td><td>FRONTIER RCA</td><td>FRONTIER</td><td>756</td><td>1886.4</td><td>SIMULATED</td></tr><tr><td>e056a499b3</td><td>Confidence Cascade</td><td>Escalation Decision</td><td>NON_LLM</td><td>0</td><td>2.0</td><td>SIMULATED</td></tr><tr><td>e056a499b3</td><td>Confidence Cascade</td><td>Confidence Evaluator</td><td>NON_LLM</td><td>0</td><td>5.0</td><td>SIMULATED</td></tr><tr><td>e056a499b3</td><td>Confidence Cascade</td><td>SLM Initial Diagnosis</td><td>SLM</td><td>259</td><td>401.0</td><td>SIMULATED</td></tr><tr><td>e056a499b3</td><td>Confidence Cascade</td><td>root</td><td>NON_LLM</td><td>0</td><td>0.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-100 → SLM</td><td>SLM</td><td>47</td><td>194.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-099 → FRONTIER</td><td>FRONTIER</td><td>315</td><td>2125.8</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-098 → SLM</td><td>SLM</td><td>46</td><td>362.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-097 → SLM</td><td>SLM</td><td>47</td><td>488.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-096 → SLM</td><td>SLM</td><td>46</td><td>487.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-095 → SLM</td><td>SLM</td><td>46</td><td>344.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-094 → SLM</td><td>SLM</td><td>47</td><td>384.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-093 → SLM</td><td>SLM</td><td>47</td><td>373.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-092 → FRONTIER</td><td>FRONTIER</td><td>313</td><td>1866.6</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-091 → SLM</td><td>SLM</td><td>47</td><td>446.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-090 → SLM</td><td>SLM</td><td>46</td><td>273.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-089 → SLM</td><td>SLM</td><td>46</td><td>309.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-088 → SLM</td><td>SLM</td><td>47</td><td>567.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-087 → SLM</td><td>SLM</td><td>47</td><td>491.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-086 → SLM</td><td>SLM</td><td>46</td><td>553.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-085 → FRONTIER</td><td>FRONTIER</td><td>313</td><td>1625.4</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-084 → SLM</td><td>SLM</td><td>46</td><td>267.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-083 → SLM</td><td>SLM</td><td>46</td><td>220.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-082 → SLM</td><td>SLM</td><td>47</td><td>379.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-081 → SLM</td><td>SLM</td><td>47</td><td>465.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-080 → SLM</td><td>SLM</td><td>46</td><td>184.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-079 → SLM</td><td>SLM</td><td>47</td><td>329.0</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-078 → FRONTIER</td><td>FRONTIER</td><td>315</td><td>2201.4</td><td>SIMULATED</td></tr><tr><td>8a55270a2c</td><td>Router Pattern</td><td>REQ-077 → SLM</td><td>SLM</td><td>46</td><td>351.0</td><td>SIMULATED</td></tr></tbody>
+        </table>
+      </div>
+      <p class="muted">Provenance labels: ACTUAL / SIMULATED / ESTIMATED. Secrets are never included in this report.</p>
+    </section>
+  </div>
+</body>
+</html>

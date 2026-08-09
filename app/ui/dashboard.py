@@ -19,8 +19,10 @@ from app.ui.mlops_dashboard import render_langsmith_page, render_mlops_page
 from app.ui.theme import callout, inject_theme, status_strip
 from app.ui.trace_explorer import render_trace_explorer
 
+APP_NAME = "Right Model Lab"
+
 st.set_page_config(
-    page_title="SLM + Frontier Architecture Lab",
+    page_title=APP_NAME,
     page_icon="AI",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -60,11 +62,11 @@ def page_overview() -> None:
     mlops = service.mlops_dashboard().get("kpis") or {}
 
     st.markdown(
-        """
+        f"""
 <div class="hero-banner">
   <div class="eyebrow">Digital Workplace Device Monitoring</div>
-  <div class="title">SLM + Frontier AI Architecture Lab</div>
-  <p class="subtitle">Use the right model for the right task — with tokens, latency, cost, confidence, and LangSmith evidence.</p>
+  <div class="title">{APP_NAME}</div>
+  <p class="subtitle">Use the right model for the right task — tokens, latency, cost, confidence, and LangSmith evidence.</p>
 </div>
 """,
         unsafe_allow_html=True,
@@ -131,7 +133,8 @@ def page_overview() -> None:
                 unsafe_allow_html=True,
             )
             if st.button("Open pattern", key=f"open_{item['pattern_id']}", use_container_width=True):
-                st.session_state["nav_page"] = PAGE_ALIASES[item["pattern_id"]]
+                # Must set a pending key BEFORE the selectbox is instantiated on next run.
+                st.session_state["pending_nav_page"] = PAGE_ALIASES[item["pattern_id"]]
                 st.rerun()
 
 
@@ -215,10 +218,10 @@ def page_fallback() -> None:
 
 def page_architecture() -> None:
     st.markdown(
-        """
+        f"""
 <div class="hero-banner">
   <div class="eyebrow">Executive Architecture</div>
-  <div class="title">SLM + Frontier Architecture Summary</div>
+  <div class="title">{APP_NAME}</div>
   <p class="subtitle">Five patterns. One principle: use the right model for the right task.</p>
 </div>
 """,
@@ -310,8 +313,15 @@ def page_model_comparison() -> None:
 
 
 def main() -> None:
-    st.sidebar.markdown("### Navigation")
-    st.sidebar.caption("Pattern Lab")
+    # Apply navigation requests before the selectbox widget is created.
+    pending = st.session_state.pop("pending_nav_page", None)
+    if pending in PAGES:
+        st.session_state["nav_page"] = pending
+    if "nav_page" not in st.session_state:
+        st.session_state["nav_page"] = "Overview"
+
+    st.sidebar.markdown(f"### {APP_NAME}")
+    st.sidebar.caption("Pattern navigation")
     page = st.sidebar.selectbox("Go to", PAGES, key="nav_page")
     st.sidebar.markdown("---")
     status = settings.public_status()
