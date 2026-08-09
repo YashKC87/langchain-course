@@ -16,7 +16,7 @@ from app.data.generator import write_datasets
 from app.services.scenario_service import PATTERN_CATALOG, get_scenario_service
 from app.ui.architecture_components import render_kpi_row, render_pattern_page
 from app.ui.mlops_dashboard import render_mlops_page
-from app.ui.pattern_architecture import render_architecture_diagram, render_architecture_page
+from app.ui.pattern_architecture import render_architecture_diagram
 from app.ui.theme import callout, inject_theme, page_header, status_strip
 
 APP_NAME = "Right Model Lab"
@@ -34,7 +34,6 @@ service = get_scenario_service()
 
 PAGES = [
     "Overview",
-    "Architecture",
     "AI Model Operations",
     "Model Comparison",
 ]
@@ -293,7 +292,6 @@ def main() -> None:
 
     pages = {
         "Overview": page_overview,
-        "Architecture": render_architecture_page,
         "AI Model Operations": render_mlops_page,
         "Model Comparison": page_model_comparison,
     }

@@ -59,7 +59,7 @@ The lab is a Python 3.11 application with four layers:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  UI (Streamlit) — Right Model Lab                            │
-│  Overview · Architecture · AI Model Operations · Comparison  │
+│  Overview · AI Model Operations · Model Comparison           │
 └────────────────────────────┬────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────┐
