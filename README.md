@@ -287,7 +287,9 @@ Streamlit app brand: **Right Model Lab** (`streamlit run app/ui/dashboard.py`).
 | **Model Comparison** | Selected hybrid vs alternative/estimated segments by pattern |
 
 - Video narration by dropdown page: [`docs/video-script.md`](docs/video-script.md)
+- Section-by-section write-up for each dropdown: [`docs/dropdown-section-writeup.md`](docs/dropdown-section-writeup.md)
 - Full technical use-case demonstration (every element): [`docs/use-case-demonstration.md`](docs/use-case-demonstration.md)
+- Catalogue PowerPoint (complete use case): [`docs/Right-Model-Lab-Catalogue.pptx`](docs/Right-Model-Lab-Catalogue.pptx) — regenerate with `python scripts/build_catalogue_pptx.py`
 
 Theme: Dark / Light toggle in the left sidebar.
 
