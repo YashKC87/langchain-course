@@ -40,7 +40,7 @@ export function IntegrationCard({ integration, onToggle, onConfigure, toggling }
         ) : null}
       </div>
 
-      <dl className="dl-grid" style={{ gridTemplateColumns: '110px 1fr' }}>
+      <dl className="dl-grid">
         <dt>Agents</dt>
         <dd>{agents}</dd>
         <dt>Last telemetry</dt>

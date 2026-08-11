@@ -144,7 +144,7 @@ export function OverviewPage() {
 
   if (empty) {
     return (
-      <div className="panel" style={{ padding: 48 }}>
+      <div className="panel connect-first-panel">
         <EmptyState
           title={empty.title}
           message={empty.message}
@@ -161,7 +161,7 @@ export function OverviewPage() {
                   >
                     <Radio size={22} />
                     <div className="connect-card-title">{a.label}</div>
-                    <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                    <div className="muted" style={{ fontSize: 12 }}>
                       Connect
                     </div>
                   </button>

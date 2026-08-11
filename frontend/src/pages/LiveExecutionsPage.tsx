@@ -47,7 +47,7 @@ export function LiveExecutionsPage() {
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;
 
   return (
-    <div className="grid-2">
+    <div className="layout-split">
       <div className="panel">
         <div className="panel-header">
           <h2 className="panel-title">Running Executions</h2>

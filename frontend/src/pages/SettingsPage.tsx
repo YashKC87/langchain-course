@@ -85,7 +85,7 @@ export function SettingsPage() {
             <p className="panel-subtitle">Operational thresholds — no financial configuration</p>
           </div>
         </div>
-        <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', display: 'grid' }}>
+        <div className="form-grid">
           {num('telemetry_retention_days', 'Telemetry retention (days)')}
           {num('auto_refresh_seconds', 'Auto refresh (seconds)')}
           {num('runaway_steps_warning', 'Runaway steps warning')}
