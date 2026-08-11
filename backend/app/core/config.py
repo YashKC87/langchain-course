@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     app_name: str = "Agent Metering & Observability Control Center"
     app_env: str = "development"
     api_prefix: str = "/api/v1"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
 
     database_url: str = "sqlite+aiosqlite:///./data/control_center.db"
     secret_store_path: str = "./data/secrets"
