@@ -673,21 +673,22 @@ code,
 .filter-bar-scroll {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 14px;
   overflow-x: auto;
   overflow-y: hidden;
   flex: 1;
   min-width: 0;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
   scrollbar-width: thin;
 }
 
 .filter-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 0 0 auto;
   min-width: 0;
+  padding-right: 2px;
 }
 
 .filter-field-label {
