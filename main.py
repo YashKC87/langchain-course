@@ -1,15 +1,7 @@
-import os
+"""Compatibility entry — prefer `cd backend && uvicorn app.main:app`."""
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
-def main():
-    print("Hello from langchain!")
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-    print(openai_api_key)
-
-
-if __name__ == "__main__":
-    main()
+print(
+    "Agent Metering & Observability Control Center\n"
+    "Start backend:  cd backend && uvicorn app.main:app --reload --port 8000\n"
+    "Start frontend: cd frontend && npm run dev\n"
+)

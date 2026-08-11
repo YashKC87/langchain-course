@@ -1,0 +1,33 @@
+# Example OpenTelemetry Collector configuration
+# Receives OTLP and forwards to the Control Center ingestion API.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 400
+
+exporters:
+  otlphttp/controlcenter:
+    endpoint: http://backend:8000/api/v1/telemetry
+    traces_endpoint: http://backend:8000/api/v1/telemetry/otlp?integration_id=otel&provider=otel
+    tls:
+      insecure: true
+  logging:
+    loglevel: info
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/controlcenter, logging]
