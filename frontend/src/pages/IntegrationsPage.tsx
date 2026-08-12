@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, formatApiError } from '../api/client';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import type { Integration } from '../types';
 import { ConnectionWizard } from '../components/ConnectionWizard';
@@ -43,7 +43,7 @@ export function IntegrationsPage() {
         if (match) setConfigure(match);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load integrations');
+      setError(formatApiError(err));
     } finally {
       setLoading(false);
     }

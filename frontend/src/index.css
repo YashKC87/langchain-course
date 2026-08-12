@@ -454,7 +454,7 @@ code,
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -728,8 +728,8 @@ code,
 
 .integration-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -737,10 +737,10 @@ code,
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
   overflow: hidden;
 }
@@ -1284,6 +1284,30 @@ code,
 .connect-first-panel {
   padding: 36px 28px 40px;
   overflow: visible;
+}
+
+.setup-guide {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: rgba(61, 154, 139, 0.06);
+}
+
+.setup-guide-steps {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.setup-guide-steps li + li {
+  margin-top: 6px;
+}
+
+.error-message-block {
+  max-width: 560px;
+  text-align: left;
 }
 
 @media (max-width: 1200px) {

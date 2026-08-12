@@ -14,6 +14,7 @@ from app.models.domain import (
     IntegrationEnableStage,
     IntegrationStatus,
 )
+from app.storage.persistence import apply_env_defaults, apply_saved_config, save_integration_overrides
 from app.storage.store import store
 
 
@@ -80,6 +81,7 @@ class IntegrationService:
         integ.auth_state = "configured"
         integ.error_message = None
         store.integrations[integration_id] = integ
+        save_integration_overrides(store.integrations)
         return integ
 
     async def test_connection(self, integration_id: str) -> dict[str, Any]:
@@ -243,6 +245,7 @@ class IntegrationService:
                 severity="info",
             )
         )
+        save_integration_overrides(store.integrations)
         return integ
 
     async def disable(self, integration_id: str) -> Integration:
@@ -268,6 +271,7 @@ class IntegrationService:
                 severity="info",
             )
         )
+        save_integration_overrides(store.integrations)
         return integ
 
     async def toggle(self, integration_id: str, enabled: bool) -> Integration:

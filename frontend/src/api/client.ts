@@ -21,32 +21,70 @@ import type {
   WorkflowGraph,
 } from '../types';
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+/** Same-origin `/api/v1` uses the Vite dev proxy or nginx in production. */
+function resolveApiBase(): string {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+  if (envUrl) return envUrl.replace(/\/$/, '');
+
+  // Dev + docker/nginx: proxy /api → backend (only expose one port)
+  if (import.meta.env.DEV || import.meta.env.PROD) {
+    return '/api/v1';
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+}
+
+export const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   status: number;
   body: unknown;
+  isNetworkError: boolean;
 
-  constructor(status: number, message: string, body?: unknown) {
+  constructor(status: number, message: string, body?: unknown, isNetworkError = false) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.body = body;
+    this.isNetworkError = isNetworkError;
   }
+}
+
+export function formatApiError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.isNetworkError) {
+      return (
+        'Cannot reach the Control Center API. The backend must be running before the UI can load data.\n\n' +
+        'Start it with:\n' +
+        '  cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000\n\n' +
+        'Or run both services:\n' +
+        '  ./scripts/dev.sh\n\n' +
+        'Then open the UI at http://localhost:5173 (not a static file URL).'
+      );
+    }
+    return err.message;
+  }
+  if (err instanceof TypeError && /fetch|network/i.test(err.message)) {
+    return formatApiError(new ApiError(0, 'Failed to fetch', null, true));
+  }
+  return err instanceof Error ? err.message : 'Request failed';
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new ApiError(0, 'Failed to fetch', null, true);
+  }
 
   if (!res.ok) {
     let body: unknown;
@@ -188,5 +226,3 @@ export const api = {
   updateSettings: (body: AppSettings) =>
     request<AppSettings>('/settings', { method: 'PUT', body: JSON.stringify(body) }),
 };
-
-export { API_BASE };

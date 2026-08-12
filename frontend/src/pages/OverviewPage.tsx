@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cloud, Radio } from 'lucide-react';
-import { api } from '../api/client';
+import { api, formatApiError } from '../api/client';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import type {
   ActivityEvent,
@@ -119,7 +119,7 @@ export function OverviewPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load overview');
+      setError(formatApiError(err));
     } finally {
       setLoading(false);
     }

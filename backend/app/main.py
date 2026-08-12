@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import get_settings
+from app.storage.persistence import apply_env_defaults, apply_saved_config
+from app.storage.store import store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,11 +23,16 @@ logger = logging.getLogger("control_center")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    apply_saved_config(store.integrations)
+    apply_env_defaults(store.integrations)
     logger.info("Starting %s (env=%s)", settings.app_name, settings.app_env)
     logger.info(
         "Content capture default: %s | No synthetic telemetry will be seeded",
         settings.content_capture_enabled,
     )
+    configured = [i.name for i in store.integrations.values() if i.configured]
+    if configured:
+        logger.info("Loaded integration config: %s", ", ".join(configured[:8]))
     yield
     logger.info("Shutting down Control Center")
 

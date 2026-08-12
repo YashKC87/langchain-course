@@ -33,6 +33,46 @@ const FIELD_SCHEMAS: Record<string, Array<{ key: string; label: string; placehol
   ],
 };
 
+const SETUP_GUIDES: Record<string, { title: string; steps: string[] }> = {
+  azure: {
+    title: 'Microsoft Azure setup',
+    steps: [
+      'Azure Portal → Microsoft Entra ID → Overview → copy Tenant ID.',
+      'Azure Portal → Subscriptions → copy Subscription ID for the target subscription.',
+      'Optional: Resource Group, Foundry project, Application Insights, or Log Analytics workspace names.',
+      'Choose Auth Method: Managed Identity (recommended on Azure), Service Principal, or Workload Identity.',
+      'For Service Principal, store client secret outside the UI — only references are saved here.',
+      'Click Save → Test Connection → turn the integration ON.',
+      'Agents appear only when live telemetry arrives (OpenTelemetry or Application Insights export).',
+    ],
+  },
+  aws: {
+    title: 'AWS setup',
+    steps: [
+      'Copy the 12-digit AWS Account ID and target Region (e.g. us-east-1).',
+      'Choose IAM Role or Workload Identity — avoid long-lived access keys in the UI.',
+      'Save → Test → Enable. Connect Bedrock/CloudWatch telemetry via OpenTelemetry or AgentCore export.',
+    ],
+  },
+  gcp: {
+    title: 'Google Cloud setup',
+    steps: [
+      'Copy the GCP Project ID and region (e.g. us-central1).',
+      'Use Workload Identity or Service Account with Vertex AI / Cloud Observability read access.',
+      'Save → Test → Enable. Telemetry arrives via OTLP or Cloud Observability export.',
+    ],
+  },
+  otel: {
+    title: 'OpenTelemetry setup',
+    steps: [
+      'Point agent exporters or a collector at this Control Center ingest URL after enabling:',
+      'POST /api/v1/telemetry/spans?integration_id=otel',
+      'Default collector endpoint for testing: http://localhost:4318',
+      'Save collector endpoint here → Test → Enable.',
+    ],
+  },
+};
+
 const AUTH_OPTIONS: Record<string, string[]> = {
   azure: ['Managed Identity', 'Service Principal', 'Workload Identity'],
   aws: ['IAM Role', 'IRSA', 'Access Key Ref'],
@@ -79,6 +119,13 @@ interface ConnectionWizardProps {
 export function ConnectionWizard({ integration, open, onClose, onSaved }: ConnectionWizardProps) {
   const fields = useMemo(() => schemaFor(integration), [integration]);
   const authOptions = useMemo(() => authFor(integration), [integration]);
+  const setupGuide = useMemo(() => {
+    if (integration.id === 'otel') return SETUP_GUIDES.otel;
+    if (integration.provider === 'azure' || integration.id.startsWith('azure')) return SETUP_GUIDES.azure;
+    if (integration.provider === 'aws') return SETUP_GUIDES.aws;
+    if (integration.provider === 'gcp') return SETUP_GUIDES.gcp;
+    return null;
+  }, [integration]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [authMethod, setAuthMethod] = useState('');
   const [saving, setSaving] = useState(false);
@@ -149,6 +196,17 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
           </button>
         </div>
         <div className="side-panel-body">
+          {setupGuide ? (
+            <div className="setup-guide">
+              <div className="panel-title">{setupGuide.title}</div>
+              <ol className="setup-guide-steps">
+                {setupGuide.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+
           <div className="form-grid">
             {fields.map((f) => (
               <div className="field" key={f.key}>
