@@ -1,21 +1,24 @@
-"""Integration enable/disable, configuration, and connection testing.
-
-Never silently fails. Never fabricates discovered agents.
-"""
+"""Integration enable/disable, configuration, and connection testing."""
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Any
 
+from app.connectors.cloud import AzureConnector
 from app.models.domain import (
     ActivityEvent,
     Integration,
     IntegrationEnableStage,
     IntegrationStatus,
 )
-from app.storage.persistence import apply_env_defaults, apply_saved_config, save_integration_overrides
+from app.storage.persistence import save_integration_overrides
 from app.storage.store import store
+
+GUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
 
 
 ENABLE_STAGES = [
@@ -111,6 +114,34 @@ class IntegrationService:
                 ),
             }
 
+        if integ.id == "azure" or integ.provider == "azure":
+            azure_errors = self._validate_azure_fields(integ)
+            if azure_errors:
+                return {"ok": False, "stage": "configuration", "message": azure_errors}
+
+            connector = AzureConnector()
+            cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+            for step, coro in (
+                ("Authenticate", connector.authenticate(cfg)),
+                ("Validate Permissions", connector.validate_permissions(cfg)),
+                ("Telemetry Source", connector.validate_telemetry_source(cfg)),
+            ):
+                result = await coro
+                if not result.get("ok", False):
+                    return {
+                        "ok": False,
+                        "stage": step.lower(),
+                        "message": result.get("message", f"{step} failed for Azure."),
+                    }
+            return {
+                "ok": True,
+                "stage": "complete",
+                "message": (
+                    f"Azure tenant {integ.config.fields.get('tenant_id', '')[:8]}… validated. "
+                    "Enable the integration, then export agent telemetry via OpenTelemetry or Application Insights."
+                ),
+            }
+
         # Endpoint presence check for OTel-style connectors
         endpoint = integ.config.fields.get("collector_endpoint") or integ.config.fields.get(
             "otel_endpoint"
@@ -148,6 +179,24 @@ class IntegrationService:
             return ["api_endpoint"]
         return []
 
+    def _validate_azure_fields(self, integ: Integration) -> str | None:
+        tenant = str(integ.config.fields.get("tenant_id") or "")
+        subscription = str(integ.config.fields.get("subscription_id") or "")
+        if tenant and not GUID_RE.match(tenant):
+            return "Tenant ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)."
+        if subscription and not GUID_RE.match(subscription):
+            return "Subscription ID must be a valid GUID."
+        auth = integ.config.auth_method or ""
+        if "Service Principal" in auth:
+            if not integ.config.fields.get("client_id") and "client_id" not in integ.config.secret_refs:
+                return (
+                    "Service Principal authentication requires Application (Client) ID. "
+                    "Register an app in Entra ID and enter the Client ID."
+                )
+            if not integ.config.secret_refs.get("client_secret") and not integ.config.fields.get("client_secret"):
+                return "Service Principal authentication requires Client Secret (stored as a secure reference)."
+        return None
+
     async def enable(self, integration_id: str) -> Integration:
         integ = store.integrations.get(integration_id)
         if not integ:
@@ -172,6 +221,20 @@ class IntegrationService:
         add("Check Saved Configuration", "success")
 
         # 2. Authenticate
+        if integ.provider == "azure":
+            azure_err = self._validate_azure_fields(integ)
+            if azure_err:
+                add("Authenticate", "failed", azure_err)
+                for remaining in ENABLE_STAGES[2:]:
+                    add(remaining, "skipped")
+                integ.enable_progress = [s.model_dump() for s in stages]
+                integ.status = IntegrationStatus.CONNECTION_FAILED
+                integ.enabled = False
+                integ.error_message = azure_err
+                store.integrations[integration_id] = integ
+                save_integration_overrides(store.integrations)
+                return integ
+
         if not integ.config.auth_method and not integ.config.secret_refs and integ.id != "otel":
             # OTel may use no auth; cloud providers need an auth method
             if integ.provider in ("azure", "aws", "gcp"):

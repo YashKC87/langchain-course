@@ -1225,6 +1225,20 @@ code,
   line-height: 1.3;
 }
 
+.connect-card-recommended {
+  border-color: rgba(61, 154, 139, 0.55);
+  box-shadow: 0 0 0 1px rgba(61, 154, 139, 0.2);
+}
+
+.connect-card-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
 /* ── Misc ──────────────────────────────────────────────── */
 
 .muted {

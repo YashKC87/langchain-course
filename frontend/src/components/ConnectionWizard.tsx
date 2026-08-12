@@ -5,13 +5,15 @@ import { api } from '../api/client';
 
 const FIELD_SCHEMAS: Record<string, Array<{ key: string; label: string; placeholder?: string }>> = {
   azure: [
-    { key: 'tenant_id', label: 'Tenant ID' },
-    { key: 'subscription_id', label: 'Subscription ID' },
+    { key: 'tenant_id', label: 'Tenant ID (required)', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+    { key: 'subscription_id', label: 'Subscription ID (required)', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+    { key: 'client_id', label: 'Application (Client) ID', placeholder: 'Required for Service Principal' },
+    { key: 'client_secret', label: 'Client Secret', placeholder: 'Stored as secure reference only' },
     { key: 'resource_group', label: 'Resource Group' },
     { key: 'foundry_project', label: 'Foundry Project' },
     { key: 'app_insights', label: 'Application Insights' },
     { key: 'log_analytics', label: 'Log Analytics Workspace' },
-    { key: 'otel_endpoint', label: 'OTel Endpoint' },
+    { key: 'otel_endpoint', label: 'OpenTelemetry Endpoint' },
   ],
   aws: [
     { key: 'account_id', label: 'Account ID' },
@@ -35,15 +37,15 @@ const FIELD_SCHEMAS: Record<string, Array<{ key: string; label: string; placehol
 
 const SETUP_GUIDES: Record<string, { title: string; steps: string[] }> = {
   azure: {
-    title: 'Microsoft Azure setup',
+    title: 'Connect your Azure tenant',
     steps: [
-      'Azure Portal → Microsoft Entra ID → Overview → copy Tenant ID.',
-      'Azure Portal → Subscriptions → copy Subscription ID for the target subscription.',
-      'Optional: Resource Group, Foundry project, Application Insights, or Log Analytics workspace names.',
-      'Choose Auth Method: Managed Identity (recommended on Azure), Service Principal, or Workload Identity.',
-      'For Service Principal, store client secret outside the UI — only references are saved here.',
-      'Click Save → Test Connection → turn the integration ON.',
-      'Agents appear only when live telemetry arrives (OpenTelemetry or Application Insights export).',
+      '1. Azure Portal → Microsoft Entra ID → Overview → copy Tenant ID.',
+      '2. Azure Portal → Subscriptions → copy the Subscription ID you want to monitor.',
+      '3. Auth Method: Managed Identity if this app runs on Azure; otherwise Service Principal.',
+      '4. Service Principal: register an app in Entra ID, grant Monitoring Reader on App Insights / Log Analytics.',
+      '5. Enter Application (Client) ID and Client Secret (secret is stored as a reference, not plain text).',
+      '6. Save → Test Connection → turn Microsoft Azure ON.',
+      '7. Agents appear when live telemetry is exported (OpenTelemetry or Application Insights).',
     ],
   },
   aws: {

@@ -159,6 +159,38 @@ async def test_enable_unconfigured_fails_clearly(client):
 
 
 @pytest.mark.asyncio
+async def test_azure_tenant_config_and_test(client):
+    tenant = "11111111-2222-3333-4444-555555555555"
+    sub = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    await client.put(
+        "/api/v1/integrations/azure/config",
+        json={
+            "fields": {"tenant_id": tenant, "subscription_id": sub},
+            "auth_method": "Managed Identity",
+        },
+    )
+    test = await client.post("/api/v1/integrations/azure/test")
+    assert test.json()["ok"] is True
+    enable = await client.post("/api/v1/integrations/azure/toggle", json={"enabled": True})
+    data = enable.json()
+    assert data["enabled"] is True
+    assert data["status"] in ("connected", "telemetry_active")
+
+
+@pytest.mark.asyncio
+async def test_azure_invalid_tenant_guid_rejected(client):
+    await client.put(
+        "/api/v1/integrations/azure/config",
+        json={
+            "fields": {"tenant_id": "not-a-guid", "subscription_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"},
+            "auth_method": "Managed Identity",
+        },
+    )
+    test = await client.post("/api/v1/integrations/azure/test")
+    assert test.json()["ok"] is False
+
+
+@pytest.mark.asyncio
 async def test_configure_and_enable_otel(client):
     await client.put(
         "/api/v1/integrations/otel/config",

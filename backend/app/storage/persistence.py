@@ -82,6 +82,7 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
             azure.config.fields = {
                 "tenant_id": tenant,
                 "subscription_id": subscription,
+                "client_id": os.environ.get("AZURE_CLIENT_ID", ""),
                 "resource_group": os.environ.get("AZURE_RESOURCE_GROUP", ""),
                 "foundry_project": os.environ.get("AZURE_FOUNDRY_PROJECT", ""),
                 "app_insights": os.environ.get("AZURE_APP_INSIGHTS", ""),
@@ -89,6 +90,8 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
                 "otel_endpoint": os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
             }
             azure.config.auth_method = os.environ.get("AZURE_AUTH_METHOD", "Managed Identity")
+            if os.environ.get("AZURE_CLIENT_SECRET"):
+                azure.config.secret_refs["client_secret"] = "ref:azure:client_secret"
             azure.configured = True
             azure.status = IntegrationStatus.DISABLED
             azure.auth_state = "configured_from_env"

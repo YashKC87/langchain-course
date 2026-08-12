@@ -152,15 +152,21 @@ export function OverviewPage() {
           actions={
             empty.actions?.length ? (
               <div className="connect-grid">
-                {empty.actions.map((a) => (
+                {empty.actions
+                  .slice()
+                  .sort((a, b) => (a.id === 'azure' ? -1 : b.id === 'azure' ? 1 : 0))
+                  .map((a) => (
                   <button
                     key={a.id}
                     type="button"
-                    className="connect-card"
+                    className={`connect-card${a.id === 'azure' ? ' connect-card-recommended' : ''}`}
                     onClick={() => navigate('/integrations', { state: { focus: a.id } })}
                   >
                     <Radio size={22} />
                     <div className="connect-card-title">{a.label}</div>
+                    {a.id === 'azure' ? (
+                      <div className="connect-card-badge">Recommended start</div>
+                    ) : null}
                     <div className="muted" style={{ fontSize: 12 }}>
                       Connect
                     </div>
