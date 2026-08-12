@@ -72,22 +72,39 @@ def apply_saved_config(integrations: dict[str, Integration]) -> None:
         integ.agents_discovered = agents if agents is not None else None
 
 
+def _azure_resource_fields_from_env() -> dict[str, str]:
+    mapping = {
+        "resource_group": "AZURE_RESOURCE_GROUP",
+        "foundry_project": "AZURE_FOUNDRY_PROJECT",
+        "app_insights": "AZURE_APP_INSIGHTS",
+        "log_analytics": "AZURE_LOG_ANALYTICS",
+        "client_id": "AZURE_CLIENT_ID",
+        "otel_endpoint": "OTEL_EXPORTER_OTLP_ENDPOINT",
+    }
+    out: dict[str, str] = {}
+    for field, env_key in mapping.items():
+        val = os.environ.get(env_key)
+        if val:
+            out[field] = val
+    return out
+
+
 def apply_env_defaults(integrations: dict[str, Integration]) -> None:
-    """Pre-fill Azure/AWS/GCP from environment when not already configured."""
+    """Pre-fill Azure/AWS/GCP from environment when not already configured.
+
+    Azure resource names from env are always merged when present so local
+    .env can set rg/project/App Insights without wiping tenant/subscription.
+    """
     azure = integrations.get("azure")
-    if azure and not azure.configured:
+    if azure:
+        resource_fields = _azure_resource_fields_from_env()
         tenant = os.environ.get("AZURE_TENANT_ID")
         subscription = os.environ.get("AZURE_SUBSCRIPTION_ID")
-        if tenant and subscription:
+        if tenant and subscription and not azure.configured:
             azure.config.fields = {
                 "tenant_id": tenant,
                 "subscription_id": subscription,
-                "client_id": os.environ.get("AZURE_CLIENT_ID", ""),
-                "resource_group": os.environ.get("AZURE_RESOURCE_GROUP", ""),
-                "foundry_project": os.environ.get("AZURE_FOUNDRY_PROJECT", ""),
-                "app_insights": os.environ.get("AZURE_APP_INSIGHTS", ""),
-                "log_analytics": os.environ.get("AZURE_LOG_ANALYTICS", ""),
-                "otel_endpoint": os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+                **resource_fields,
             }
             azure.config.auth_method = os.environ.get("AZURE_AUTH_METHOD", "Managed Identity")
             if os.environ.get("AZURE_CLIENT_SECRET"):
@@ -95,6 +112,16 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
             azure.configured = True
             azure.status = IntegrationStatus.DISABLED
             azure.auth_state = "configured_from_env"
+        elif resource_fields:
+            # Merge resource names without clearing existing tenant/subscription
+            azure.config.fields = {**azure.config.fields, **resource_fields}
+            if os.environ.get("AZURE_AUTH_METHOD") and not azure.config.auth_method:
+                azure.config.auth_method = os.environ["AZURE_AUTH_METHOD"]
+            if azure.config.fields.get("tenant_id") and azure.config.fields.get("subscription_id"):
+                azure.configured = True
+                if azure.status == IntegrationStatus.NOT_CONFIGURED:
+                    azure.status = IntegrationStatus.DISABLED
+                azure.auth_state = azure.auth_state or "configured_from_env"
 
     aws = integrations.get("aws")
     if aws and not aws.configured:
