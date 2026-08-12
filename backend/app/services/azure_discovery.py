@@ -73,13 +73,28 @@ def _credential(config: dict[str, Any]):
 
     if "managed identity" in auth:
         mi_client = client_id or os.environ.get("AZURE_CLIENT_ID")
+        # If a client secret is present, prefer Service Principal even when
+        # the UI still says Managed Identity (common in local/dev).
+        if tenant and client_id and client_secret:
+            return ClientSecretCredential(
+                tenant_id=str(tenant),
+                client_id=str(client_id),
+                client_secret=str(client_secret),
+            )
         try:
             if mi_client:
                 return ManagedIdentityCredential(client_id=str(mi_client))
             return ManagedIdentityCredential()
         except Exception:
-            # Fall through to DefaultAzureCredential (covers local az login / VS Code)
             pass
+
+    # DefaultAzureCredential covers az login / VS Code / env SP
+    if tenant and client_id and client_secret:
+        return ClientSecretCredential(
+            tenant_id=str(tenant),
+            client_id=str(client_id),
+            client_secret=str(client_secret),
+        )
 
     return DefaultAzureCredential(exclude_interactive_browser_credential=True)
 
