@@ -142,6 +142,18 @@ async def toggle_integration(
     return integ.model_dump()
 
 
+@router.post("/integrations/{integration_id}/discover")
+async def discover_integration_agents(
+    integration_id: str,
+    _: dict = Depends(require_permission("integrations:write")),
+):
+    """Scan the connected platform for deployed agents (Azure subscription discovery)."""
+    try:
+        return await integration_service.discover(integration_id)
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
 # ── Agents ──────────────────────────────────────────────────────────────
 
 

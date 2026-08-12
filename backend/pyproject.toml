@@ -17,6 +17,9 @@ dependencies = [
     "protobuf>=5.28.0",
     "aiosqlite>=0.20.0",
     "python-multipart>=0.0.12",
+    "azure-identity>=1.19.0",
+    "azure-mgmt-resource>=23.2.0",
+    "azure-mgmt-cognitiveservices>=13.5.0",
 ]
 
 [project.optional-dependencies]

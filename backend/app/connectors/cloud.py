@@ -45,7 +45,13 @@ class AzureConnector(BaseConnector):
         return {"ok": True, "message": "Azure telemetry source configuration present."}
 
     async def discover_agents(self, config: dict[str, Any]) -> list[dict[str, Any]]:
-        return []
+        result = await self.discover_detailed(config)
+        return list(result.get("agents") or [])
+
+    async def discover_detailed(self, config: dict[str, Any]) -> dict[str, Any]:
+        from app.services.azure_discovery import discover_agents_in_subscription
+
+        return await discover_agents_in_subscription(config)
 
     async def fetch_telemetry(self, config: dict[str, Any]) -> list[dict[str, Any]]:
         return []

@@ -10,6 +10,7 @@ const FIELD_SCHEMAS: Record<string, Array<{ key: string; label: string; placehol
     { key: 'client_id', label: 'Application (Client) ID', placeholder: 'Required for Service Principal' },
     { key: 'client_secret', label: 'Client Secret', placeholder: 'Stored as secure reference only' },
     { key: 'resource_group', label: 'Resource Group', placeholder: 'rg-agent-metering-dev' },
+    { key: 'foundry_account', label: 'AI Services / Foundry Account Name', placeholder: 'Optional — scanned from subscription if empty' },
     { key: 'foundry_project', label: 'Foundry Project', placeholder: 'agent-metering-project' },
     { key: 'app_insights', label: 'Application Insights', placeholder: 'ai-agent-metering' },
     { key: 'log_analytics', label: 'Log Analytics Workspace', placeholder: 'law-agent-metering' },
@@ -45,7 +46,8 @@ const SETUP_GUIDES: Record<string, { title: string; steps: string[] }> = {
       '4. Service Principal: register an app in Entra ID, grant Monitoring Reader on App Insights / Log Analytics.',
       '5. Enter Application (Client) ID and Client Secret (secret is stored as a reference, not plain text).',
       '6. Save → Test Connection → turn Microsoft Azure ON.',
-      '7. Agents appear when live telemetry is exported (OpenTelemetry or Application Insights).',
+      '7. Click Refresh Discovery to list agents deployed in the subscription / Foundry project.',
+      '8. Agents also appear automatically when live telemetry is exported.',
     ],
   },
   aws: {

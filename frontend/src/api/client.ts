@@ -160,6 +160,20 @@ export const api = {
       body: JSON.stringify({ enabled }),
     }),
 
+  discoverIntegration: (id: string) =>
+    request<{
+      ok: boolean;
+      message?: string;
+      stage?: string;
+      agents?: Array<Record<string, unknown>>;
+      counts?: { created: number; updated: number; total: number };
+      accounts_scanned?: string[];
+      errors?: string[];
+      subscription_id?: string;
+      resource_group?: string;
+      foundry_project?: string;
+    }>(`/integrations/${id}/discover`, { method: 'POST' }),
+
   getAgents: () => request<ListResponse<Agent> | EmptyStateResponse>('/agents'),
 
   getAgentMetering: () =>

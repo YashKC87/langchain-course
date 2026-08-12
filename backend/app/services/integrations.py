@@ -272,20 +272,54 @@ class IntegrationService:
         # 5. Test Telemetry Access
         add("Test Telemetry Access", "success", "Ready to receive telemetry.")
 
-        # 6. Discover Agents — do NOT manufacture agents
-        discovered = sum(1 for a in store.agents.values() if a.integration_id == integration_id)
-        add(
-            "Discover Agents",
-            "success",
-            (
-                f"{discovered} agents already registered from prior telemetry."
-                if discovered
-                else "Connection successful. No agents discovered yet. Waiting for live telemetry or provider API discovery."
-            ),
-        )
+        # 6. Discover Agents — real Azure discovery when possible; never fabricate
+        discovery_message = "Registry will update when agents are discovered."
+        discovered_count = sum(1 for a in store.agents.values() if a.integration_id == integration_id)
+        if integ.id == "azure" or integ.provider == "azure":
+            try:
+                from app.connectors.cloud import AzureConnector
+                from app.services.discovery import register_discovered_agents
+
+                connector = AzureConnector()
+                cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+                # Include secret refs for SP when available as env fallback
+                detail = await connector.discover_detailed(cfg)
+                agents = detail.get("agents") or []
+                counts = register_discovered_agents(agents, integration_id=integration_id)
+                discovered_count = counts["total"] if counts["total"] else discovered_count
+                discovery_message = detail.get("message") or discovery_message
+                if detail.get("errors"):
+                    discovery_message += " Warnings: " + "; ".join(detail["errors"][:3])
+                add("Discover Agents", "success", discovery_message)
+            except Exception as exc:  # noqa: BLE001
+                add(
+                    "Discover Agents",
+                    "failed",
+                    str(exc),
+                )
+                for remaining in ENABLE_STAGES[6:]:
+                    add(remaining, "skipped")
+                integ.enable_progress = [s.model_dump() for s in stages]
+                integ.status = IntegrationStatus.WARNING
+                integ.enabled = True  # stay enabled but warn — config is valid
+                integ.error_message = str(exc)
+                integ.agents_discovered = discovered_count if discovered_count else None
+                store.integrations[integration_id] = integ
+                save_integration_overrides(store.integrations)
+                return integ
+        else:
+            add(
+                "Discover Agents",
+                "success",
+                (
+                    f"{discovered_count} agents already registered from prior telemetry."
+                    if discovered_count
+                    else "Connection successful. No agents discovered yet. Waiting for live telemetry or provider API discovery."
+                ),
+            )
 
         # 7. Register Agents
-        add("Register Agents", "success", "Registry will update when agents are discovered.")
+        add("Register Agents", "success", discovery_message)
 
         # 8. Start Telemetry Collection
         add("Start Telemetry Collection", "success", "Monitoring active.")
@@ -295,7 +329,7 @@ class IntegrationService:
         integ.connection_health = "connected"
         integ.auth_state = "authenticated"
         integ.error_message = None
-        integ.agents_discovered = discovered if discovered else None
+        integ.agents_discovered = discovered_count if discovered_count else None
         integ.enable_progress = [s.model_dump() for s in stages]
         store.integrations[integration_id] = integ
 
@@ -341,6 +375,91 @@ class IntegrationService:
         if enabled:
             return await self.enable(integration_id)
         return await self.disable(integration_id)
+
+    async def discover(self, integration_id: str) -> dict[str, Any]:
+        """Refresh agent discovery for an integration (Azure subscription scan)."""
+        integ = store.integrations.get(integration_id)
+        if not integ:
+            raise KeyError(f"Unknown integration: {integration_id}")
+        if not integ.configured:
+            return {
+                "ok": False,
+                "message": "Configure the integration before running discovery.",
+                "agents": [],
+            }
+        if not integ.enabled:
+            return {
+                "ok": False,
+                "message": "Enable the integration before running discovery.",
+                "agents": [],
+            }
+
+        if integ.id == "azure" or integ.provider == "azure":
+            from app.connectors.cloud import AzureConnector
+            from app.services.discovery import register_discovered_agents
+            from app.services.azure_discovery import AzureDiscoveryError
+
+            connector = AzureConnector()
+            cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+            try:
+                detail = await connector.discover_detailed(cfg)
+            except AzureDiscoveryError as exc:
+                integ.status = IntegrationStatus.WARNING
+                integ.error_message = exc.message
+                store.integrations[integration_id] = integ
+                save_integration_overrides(store.integrations)
+                return {
+                    "ok": False,
+                    "stage": exc.stage,
+                    "message": exc.message,
+                    "agents": [],
+                    "accounts_scanned": [],
+                    "errors": [exc.message],
+                }
+
+            agents = detail.get("agents") or []
+            counts = register_discovered_agents(agents, integration_id=integration_id)
+            integ.error_message = None
+            if agents:
+                integ.status = IntegrationStatus.CONNECTED
+            store.integrations[integration_id] = integ
+            save_integration_overrides(store.integrations)
+
+            await store.record_activity(
+                ActivityEvent(
+                    id=f"integ-discover-{integration_id}-{datetime.now(timezone.utc).timestamp()}",
+                    timestamp=datetime.now(timezone.utc),
+                    event_type="agent_discovery",
+                    message=detail.get("message") or f"Discovery finished for {integ.name}",
+                    severity="info",
+                )
+            )
+            return {
+                "ok": True,
+                "message": detail.get("message"),
+                "agents": agents,
+                "counts": counts,
+                "accounts_scanned": detail.get("accounts_scanned") or [],
+                "errors": detail.get("errors") or [],
+                "subscription_id": detail.get("subscription_id"),
+                "resource_group": detail.get("resource_group"),
+                "foundry_project": detail.get("foundry_project"),
+            }
+
+        return {
+            "ok": True,
+            "message": (
+                "Provider API discovery is not implemented for this integration yet. "
+                "Agents appear when live telemetry arrives."
+            ),
+            "agents": [
+                a.model_dump()
+                for a in store.agents.values()
+                if a.integration_id == integration_id
+            ],
+            "accounts_scanned": [],
+            "errors": [],
+        }
 
     def health_panel(self) -> list[dict[str, Any]]:
         rows = []

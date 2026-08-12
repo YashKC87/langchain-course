@@ -25,6 +25,7 @@ export function IntegrationsPage() {
   const [groups, setGroups] = useState<Record<string, Integration[]>>({});
   const [configure, setConfigure] = useState<Integration | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [discovering, setDiscovering] = useState<string | null>(null);
   const [progressNote, setProgressNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +83,30 @@ export function IntegrationsPage() {
     }
   };
 
+  const onDiscover = async (integration: Integration) => {
+    setDiscovering(integration.id);
+    setProgressNote(null);
+    try {
+      const result = await api.discoverIntegration(integration.id);
+      const count = result.counts?.total ?? result.agents?.length ?? 0;
+      if (result.ok) {
+        setProgressNote(
+          result.message ||
+            (count
+              ? `Discovered ${count} agent(s) in subscription ${result.subscription_id ?? ''}.`
+              : 'Discovery finished — no agents found.'),
+        );
+      } else {
+        setProgressNote(result.message || 'Discovery failed.');
+      }
+      await load();
+    } catch (err) {
+      setProgressNote(err instanceof Error ? err.message : 'Discovery failed');
+    } finally {
+      setDiscovering(null);
+    }
+  };
+
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;
 
@@ -108,8 +133,10 @@ export function IntegrationsPage() {
                 key={integ.id}
                 integration={integ}
                 toggling={toggling === integ.id}
+                discovering={discovering === integ.id}
                 onConfigure={() => setConfigure(integ)}
                 onToggle={(on) => void onToggle(integ, on)}
+                onDiscover={() => void onDiscover(integ)}
               />
             ))}
           </div>

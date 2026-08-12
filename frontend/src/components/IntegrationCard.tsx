@@ -6,13 +6,26 @@ interface IntegrationCardProps {
   integration: Integration;
   onToggle: (enabled: boolean) => void;
   onConfigure: () => void;
+  onDiscover?: () => void;
   toggling?: boolean;
+  discovering?: boolean;
 }
 
-export function IntegrationCard({ integration, onToggle, onConfigure, toggling }: IntegrationCardProps) {
+export function IntegrationCard({
+  integration,
+  onToggle,
+  onConfigure,
+  onDiscover,
+  toggling,
+  discovering,
+}: IntegrationCardProps) {
   const tone = statusTone(integration.status);
   const agents =
     integration.agents_discovered == null ? '—' : String(integration.agents_discovered);
+  const canDiscover =
+    Boolean(onDiscover) &&
+    integration.enabled &&
+    (integration.id === 'azure' || integration.provider === 'azure');
 
   return (
     <div className="integration-card">
@@ -59,6 +72,16 @@ export function IntegrationCard({ integration, onToggle, onConfigure, toggling }
         <button type="button" className="btn" onClick={onConfigure}>
           Configure
         </button>
+        {canDiscover ? (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onDiscover}
+            disabled={discovering}
+          >
+            {discovering ? 'Discovering…' : 'Refresh Discovery'}
+          </button>
+        ) : null}
       </div>
     </div>
   );
