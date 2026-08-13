@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import type { EnableProgressStage, Integration } from '../types';
 import { api } from '../api/client';
+import { AzureResourceGroupField } from './AzureResourceGroupField';
 
 const FIELD_SCHEMAS: Record<string, Array<{ key: string; label: string; placeholder?: string }>> = {
   azure: [
@@ -144,8 +145,6 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [progress, setProgress] = useState<EnableProgressStage[]>(integration.enable_progress ?? []);
-  const [resourceGroups, setResourceGroups] = useState<Array<{ name: string; location?: string }>>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
   const [resourceGroup, setResourceGroup] = useState('');
 
   useEffect(() => {
@@ -159,7 +158,6 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
     setAuthMethod(integration.config.auth_method ?? '');
     setProgress(integration.enable_progress ?? []);
     setMessage(null);
-    setResourceGroups([]);
     const savedRg = integration.config.fields.resource_group;
     setResourceGroup(savedRg == null ? '' : String(savedRg));
   }, [open, integration, fields]);
@@ -174,7 +172,7 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
       for (const [k, v] of Object.entries(values)) {
         if (v.trim()) clean[k] = v.trim();
       }
-      if (isAzureIntegration(integration) && resourceGroup.trim()) {
+      if (isAzureIntegration(integration)) {
         clean.resource_group = resourceGroup.trim();
       }
       const updated = await api.saveIntegrationConfig(integration.id, {
@@ -187,29 +185,6 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
       setMessage(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const loadResourceGroups = async () => {
-    setLoadingGroups(true);
-    setMessage(null);
-    try {
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(values)) {
-        if (v.trim()) fields[k] = v.trim();
-      }
-      if (authMethod) fields.auth_method = authMethod;
-      const result = await api.listAzureResourceGroups(integration.id, fields);
-      if (!result.ok) {
-        setMessage(result.message || 'Unable to load resource groups.');
-        return;
-      }
-      setResourceGroups(result.resource_groups ?? []);
-      setMessage(result.message || `Loaded ${result.count ?? 0} resource group(s).`);
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to load resource groups');
-    } finally {
-      setLoadingGroups(false);
     }
   };
 
@@ -267,45 +242,14 @@ export function ConnectionWizard({ integration, open, onClose, onSaved }: Connec
               </div>
             ))}
             {isAzureIntegration(integration) ? (
-              <div className="field" style={{ gridColumn: '1 / -1' }}>
-                <label className="label" htmlFor={`${integration.id}-resource-group`}>
-                  Resource Group (discovery scope)
-                </label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <select
-                    id={`${integration.id}-resource-group`}
-                    className="select"
-                    style={{ flex: '1 1 220px' }}
-                    value={resourceGroup}
-                    onChange={(e) => setResourceGroup(e.target.value)}
-                  >
-                    <option value="">All resource groups (full subscription scan)</option>
-                    {resourceGroup &&
-                    !resourceGroups.some((g) => g.name === resourceGroup) ? (
-                      <option value={resourceGroup}>{resourceGroup} (saved)</option>
-                    ) : null}
-                    {resourceGroups.map((g) => (
-                      <option key={g.name} value={g.name}>
-                        {g.name}
-                        {g.location ? ` (${g.location})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => void loadResourceGroups()}
-                    disabled={loadingGroups || !values.subscription_id?.trim()}
-                  >
-                    {loadingGroups ? 'Loading…' : 'Load Resource Groups'}
-                  </button>
-                </div>
-                <p className="muted" style={{ fontSize: 11, marginTop: 6 }}>
-                  Enter Subscription ID and auth details, then load groups from Azure. Discovery
-                  scans only the selected resource group unless &quot;All resource groups&quot; is
-                  chosen.
-                </p>
-              </div>
+              <AzureResourceGroupField
+                integrationId={integration.id}
+                value={resourceGroup}
+                onChange={setResourceGroup}
+                draftFields={values}
+                authMethod={authMethod}
+                helpText="Select a resource group to scope discovery. The selected value is saved with your configuration."
+              />
             ) : null}
             <div className="field">
               <label className="label" htmlFor={`${integration.id}-auth`}>

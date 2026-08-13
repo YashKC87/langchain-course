@@ -154,6 +154,7 @@ export function IntegrationsPage() {
                 onConfigure={() => setConfigure(integ)}
                 onToggle={(on) => void onToggle(integ, on)}
                 onDiscover={(resourceGroup) => void onDiscover(integ, resourceGroup)}
+                onConfigUpdated={() => void load()}
               />
             ))}
           </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Integration } from '../types';
 import { displayOrDash, formatRelative, statusTone } from '../utils/format';
+import { AzureResourceGroupField } from './AzureResourceGroupField';
 import { IntegrationSwitch } from './IntegrationSwitch';
 
 interface IntegrationCardProps {
@@ -9,6 +10,7 @@ interface IntegrationCardProps {
   onToggle: (enabled: boolean) => void;
   onConfigure: () => void;
   onDiscover?: (resourceGroup?: string) => void;
+  onConfigUpdated?: () => void;
   toggling?: boolean;
   discovering?: boolean;
 }
@@ -22,6 +24,7 @@ export function IntegrationCard({
   onToggle,
   onConfigure,
   onDiscover,
+  onConfigUpdated,
   toggling,
   discovering,
 }: IntegrationCardProps) {
@@ -37,37 +40,30 @@ export function IntegrationCard({
       ['bedrock', 'bedrock-agents', 'agentcore'].includes(integration.id));
 
   const savedRg = integration.config.fields?.resource_group;
-  const [resourceGroups, setResourceGroups] = useState<Array<{ name: string; location?: string }>>(
-    [],
-  );
-  const [resourceGroup, setResourceGroup] = useState(
-    savedRg == null ? '' : String(savedRg),
-  );
-  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [resourceGroup, setResourceGroup] = useState(savedRg == null ? '' : String(savedRg));
+  const [savingRg, setSavingRg] = useState(false);
 
   useEffect(() => {
     setResourceGroup(savedRg == null ? '' : String(savedRg));
   }, [savedRg]);
 
-  useEffect(() => {
-    if (!isAzureIntegration(integration) || !integration.enabled || !integration.configured) {
-      return;
-    }
-    let cancelled = false;
-    setLoadingGroups(true);
-    void api
-      .listAzureResourceGroups(integration.id)
-      .then((result) => {
-        if (cancelled || !result.ok) return;
-        setResourceGroups(result.resource_groups ?? []);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingGroups(false);
+  const handleResourceGroupChange = async (value: string) => {
+    setResourceGroup(value);
+    if (!isAzureIntegration(integration) || !integration.configured) return;
+    setSavingRg(true);
+    try {
+      await api.saveIntegrationConfig(integration.id, {
+        fields: {
+          ...integration.config.fields,
+          resource_group: value,
+        },
+        auth_method: integration.config.auth_method ?? null,
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [integration.id, integration.enabled, integration.configured]);
+      onConfigUpdated?.();
+    } finally {
+      setSavingRg(false);
+    }
+  };
 
   return (
     <div className="integration-card">
@@ -116,30 +112,20 @@ export function IntegrationCard({
         </div>
       ) : null}
 
-      {canDiscover && isAzureIntegration(integration) ? (
-        <div className="field" style={{ marginBottom: 8 }}>
-          <label className="label" htmlFor={`${integration.id}-card-rg`}>
-            Resource group
-          </label>
-          <select
-            id={`${integration.id}-card-rg`}
-            className="select"
-            value={resourceGroup}
-            disabled={loadingGroups || discovering}
-            onChange={(e) => setResourceGroup(e.target.value)}
-          >
-            <option value="">All resource groups</option>
-            {resourceGroup && !resourceGroups.some((g) => g.name === resourceGroup) ? (
-              <option value={resourceGroup}>{resourceGroup} (saved)</option>
-            ) : null}
-            {resourceGroups.map((g) => (
-              <option key={g.name} value={g.name}>
-                {g.name}
-                {g.location ? ` (${g.location})` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+      {isAzureIntegration(integration) && integration.configured ? (
+        <AzureResourceGroupField
+          integrationId={integration.id}
+          value={resourceGroup}
+          onChange={(value) => void handleResourceGroupChange(value)}
+          disabled={savingRg || discovering}
+          showLoadButton={false}
+          label="Resource group"
+          helpText={
+            savingRg
+              ? 'Saving selection…'
+              : 'Select a resource group — the value is saved immediately and used for discovery.'
+          }
+        />
       ) : null}
 
       <div className="integration-actions">
@@ -151,7 +137,7 @@ export function IntegrationCard({
             type="button"
             className="btn btn-primary"
             onClick={() => onDiscover?.(resourceGroup || undefined)}
-            disabled={discovering}
+            disabled={discovering || savingRg}
           >
             {discovering ? 'Discovering…' : 'Refresh Discovery'}
           </button>

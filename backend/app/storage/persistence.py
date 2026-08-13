@@ -113,8 +113,14 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
             azure.status = IntegrationStatus.DISABLED
             azure.auth_state = "configured_from_env"
         elif resource_fields:
-            # Merge resource names without clearing existing tenant/subscription
-            azure.config.fields = {**azure.config.fields, **resource_fields}
+            # Merge resource names without clearing existing tenant/subscription.
+            # Saved resource_group from disk/UI wins over .env on restart.
+            merged = dict(azure.config.fields)
+            for key, val in resource_fields.items():
+                if key == "resource_group" and merged.get("resource_group"):
+                    continue
+                merged[key] = val
+            azure.config.fields = merged
             if os.environ.get("AZURE_AUTH_METHOD") and not azure.config.auth_method:
                 azure.config.auth_method = os.environ["AZURE_AUTH_METHOD"]
             if azure.config.fields.get("tenant_id") and azure.config.fields.get("subscription_id"):

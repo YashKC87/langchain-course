@@ -73,6 +73,10 @@ class IntegrationService:
                 safe_fields[k] = v
 
         integ.config.fields = {**integ.config.fields, **safe_fields}
+        # Allow clearing optional scope fields when client sends empty string / null
+        for optional_key in ("resource_group", "foundry_account", "foundry_project"):
+            if optional_key in fields and (fields[optional_key] is None or str(fields[optional_key]).strip() == ""):
+                integ.config.fields.pop(optional_key, None)
         if auth_method:
             integ.config.auth_method = auth_method
         if secret_refs:
