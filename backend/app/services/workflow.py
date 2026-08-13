@@ -5,6 +5,8 @@ Does not fabricate missing relationships. Unknown edges are marked clearly.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from app.models.domain import (
     ExecutionStatus,
     NormalizedSpan,
@@ -63,12 +65,19 @@ def build_workflow(execution_id: str, spans: list[NormalizedSpan], status: Execu
     edges: list[WorkflowEdge] = []
     by_id = {s.span_id: s for s in spans}
 
-    # Determine live node: running status with no end, or latest running
+    # Determine live node: running status with no end, or latest span while execution is live
     live_ids: set[str] = set()
     for s in spans:
         st = _normalize_status(s.status)
         if st == ExecutionStatus.RUNNING or (s.start_time and not s.end_time and st != ExecutionStatus.SUCCESS):
             live_ids.add(s.span_id)
+    if not live_ids and status == ExecutionStatus.RUNNING and spans:
+        # Fresh pull-based runs: highlight the most recent span as in progress
+        latest = max(
+            spans,
+            key=lambda s: s.end_time or s.start_time or datetime.min.replace(tzinfo=timezone.utc),
+        )
+        live_ids.add(latest.span_id)
 
     for s in spans:
         st = _normalize_status(s.status)

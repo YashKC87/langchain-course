@@ -391,6 +391,76 @@ def test_aggregate_missing_fields_stay_none():
     assert exe.input_tokens is None
 
 
+def test_aggregate_groups_by_trace_not_response_id():
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.domain import ExecutionStatus
+
+    now = datetime.now(timezone.utc)
+    old = now - timedelta(minutes=10)
+    spans = [
+        normalize_span(
+            {
+                "name": "chat-1",
+                "span_id": "s1",
+                "trace_id": "shared-trace",
+                "start_time": (old).isoformat(),
+                "end_time": (old + timedelta(seconds=2)).isoformat(),
+                "status": "ok",
+                "attributes": {
+                    "agent.id": "agent-1",
+                    "agent.name": "Agent",
+                    "gen_ai.response.id": "resp-aaa",
+                },
+            }
+        ),
+        normalize_span(
+            {
+                "name": "chat-2",
+                "span_id": "s2",
+                "trace_id": "shared-trace",
+                "start_time": (old + timedelta(seconds=3)).isoformat(),
+                "end_time": (old + timedelta(seconds=5)).isoformat(),
+                "status": "error",
+                "attributes": {
+                    "agent.id": "agent-1",
+                    "agent.name": "Agent",
+                    "gen_ai.response.id": "resp-bbb",
+                },
+            }
+        ),
+    ]
+    assert spans[0].execution_id == "shared-trace"
+    assert spans[1].execution_id == "shared-trace"
+    exe = aggregate_execution(spans)
+    assert exe.status == ExecutionStatus.FAILED
+    assert exe.execution_id == "shared-trace"
+
+
+def test_aggregate_marks_recent_activity_as_running():
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.domain import ExecutionStatus
+
+    now = datetime.now(timezone.utc)
+    spans = [
+        normalize_span(
+            {
+                "name": "chat",
+                "span_id": "fresh",
+                "trace_id": "live-trace",
+                "start_time": (now - timedelta(seconds=20)).isoformat(),
+                "end_time": (now - timedelta(seconds=2)).isoformat(),
+                "status": "ok",
+                "attributes": {"agent.id": "a1", "agent.name": "Live Agent"},
+            }
+        )
+    ]
+    exe = aggregate_execution(spans)
+    assert exe.status == ExecutionStatus.RUNNING
+    assert exe.end_time is None
+
+
 @pytest.mark.asyncio
 async def test_runaway_detection_creates_attention(client):
     await client.put(
@@ -458,7 +528,8 @@ async def test_reingest_does_not_duplicate_workflow_nodes(client):
     await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
     await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
     await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
-    wf = (await client.get("/api/v1/executions/exec-dup/workflow")).json()
+    # Execution id follows shared trace_id so multi-step runs stay one transaction.
+    wf = (await client.get("/api/v1/executions/dup-trace/workflow")).json()
     assert len(wf["nodes"]) == 2
     assert len({n["id"] for n in wf["nodes"]}) == 2
     assert len(wf["edges"]) == 1

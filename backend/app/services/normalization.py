@@ -17,6 +17,11 @@ from app.models.domain import (
     WorkflowNodeType,
 )
 
+# Pull-based telemetry (e.g. App Insights) only emits completed child spans while an
+# agent run is still in flight. Keep the parent execution "running" until activity
+# has been idle for this long.
+IN_PROGRESS_IDLE_SECONDS = 90
+
 # Token field aliases → canonical
 INPUT_TOKEN_ALIASES = (
     "input_tokens",
@@ -232,9 +237,13 @@ def normalize_span(raw: dict[str, Any], provider: str = "otel") -> NormalizedSpa
 
     exec_id = (
         attrs.get("execution.id")
-        or attrs.get("gen_ai.response.id")
+        or attrs.get("gen_ai.conversation.id")
+        or attrs.get("conversation.id")
         or attrs.get("session.id")
-        or trace_id
+        # Prefer shared trace/operation id so multi-step agent runs stay one execution.
+        # gen_ai.response.id is per-completion and would split in-progress traces.
+        or (trace_id if trace_id and trace_id != "unknown" else None)
+        or attrs.get("gen_ai.response.id")
     )
 
     return NormalizedSpan(
@@ -308,10 +317,26 @@ def aggregate_execution(spans: list[NormalizedSpan], existing: Execution | None 
     a2a_spans = [s for s in spans if s.node_type == WorkflowNodeType.A2A]
 
     statuses = [normalize_status(s.status) for s in spans]
-    if ExecutionStatus.RUNNING in statuses and not ends:
+    open_spans = [s for s in spans if s.end_time is None]
+    now = datetime.now(timezone.utc)
+
+    def _aware(dt: datetime) -> datetime:
+        return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+    activity_times = [_aware(t) for t in (*starts, *ends) if t is not None]
+    latest_activity = max(activity_times) if activity_times else None
+    recently_active = bool(
+        latest_activity
+        and (now - latest_activity).total_seconds() < IN_PROGRESS_IDLE_SECONDS
+    )
+
+    if ExecutionStatus.FAILED in statuses or ExecutionStatus.TIMEOUT in statuses:
+        status = ExecutionStatus.FAILED if ExecutionStatus.FAILED in statuses else ExecutionStatus.TIMEOUT
+    elif open_spans or ExecutionStatus.RUNNING in statuses or recently_active:
+        # Open spans, explicit running, or fresh activity (in-progress agent pull).
         status = ExecutionStatus.RUNNING
-    elif ExecutionStatus.FAILED in statuses:
-        status = ExecutionStatus.FAILED
+        end_time = None
+        duration = (now - _aware(start_time)).total_seconds() * 1000 if start_time else None
     elif statuses and all(st == ExecutionStatus.SUCCESS for st in statuses):
         status = ExecutionStatus.SUCCESS
     elif statuses:

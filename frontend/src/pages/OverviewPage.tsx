@@ -158,7 +158,7 @@ export function OverviewPage() {
         <div className="panel-header">
           <div>
             <h2 className="panel-title">Live Executions</h2>
-            <p className="panel-subtitle">Recent agent runs · open Live Executions for full workflow traces</p>
+            <p className="panel-subtitle">All recent transactions (running, success, failed) · open Live Executions for full traces</p>
           </div>
           <button type="button" className="btn" onClick={() => navigate('/live-executions')}>
             Open live view

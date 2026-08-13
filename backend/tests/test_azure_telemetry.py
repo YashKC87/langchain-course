@@ -30,6 +30,38 @@ def test_row_to_span_maps_foundry_tokens():
     assert span["trace_id"] == "b0657677e5a841ee940695fb28f536f4"
     assert span["attributes"]["gen_ai.agent.name"] == "EUC-Teams-Agent"
     assert span["attributes"]["gen_ai.usage.input_tokens"] == "6124"
+    assert span["status"] == "ok"
+
+
+def test_row_to_span_failed_and_in_progress():
+    failed = _row_to_span(
+        {
+            "timestamp": "2026-08-13T12:34:34Z",
+            "id": "fail1",
+            "name": "chat",
+            "success": "False",
+            "duration": 100,
+            "operation_Id": "op1",
+            "customDimensions": "{}",
+            "customMeasurements": "{}",
+        }
+    )
+    assert failed["status"] == "error"
+
+    running = _row_to_span(
+        {
+            "timestamp": "2026-08-13T12:34:34Z",
+            "id": "run1",
+            "name": "invoke agent",
+            "success": "True",
+            "duration": None,
+            "operation_Id": "op2",
+            "customDimensions": "{}",
+            "customMeasurements": "{}",
+        }
+    )
+    assert running["status"] == "running"
+    assert running["end_time"] is None
 
 
 @pytest.mark.asyncio

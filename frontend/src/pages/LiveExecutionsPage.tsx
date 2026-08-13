@@ -32,6 +32,21 @@ function tileTone(status: string): 'default' | 'running' | 'success' | 'warning'
   return 'default';
 }
 
+function statusCounts(items: Execution[]): string {
+  const counts: Record<string, number> = {};
+  for (const e of items) {
+    counts[e.status] = (counts[e.status] ?? 0) + 1;
+  }
+  const order = ['running', 'success', 'failed', 'timeout', 'warning', 'cancelled', 'unknown'];
+  const parts = order
+    .filter((k) => counts[k])
+    .map((k) => `${counts[k]} ${k}`);
+  for (const [k, v] of Object.entries(counts)) {
+    if (!order.includes(k)) parts.push(`${v} ${k}`);
+  }
+  return parts.join(' · ') || 'No transactions';
+}
+
 export function LiveExecutionsPage() {
   const [items, setItems] = useState<Execution[]>([]);
   const [empty, setEmpty] = useState<{ title: string; message: string } | null>(null);
@@ -68,6 +83,7 @@ export function LiveExecutionsPage() {
         setSelected(null);
       } else {
         setEmpty(null);
+        // Show every transaction by default (running, success, failed, …).
         const list = runningOnlyWorkflow
           ? res.items.filter((e) => e.status === 'running')
           : res.items;
@@ -77,7 +93,7 @@ export function LiveExecutionsPage() {
           setGraph(null);
           setEmpty({
             title: 'No agent currently running',
-            message: 'Turn off “Workflow: running only” to inspect recent completed agent traces.',
+            message: 'Turn off “Running only” to inspect all recent transactions (success, failed, and in progress).',
           });
           return;
         }
@@ -94,7 +110,8 @@ export function LiveExecutionsPage() {
     }
   }, [selected, runningOnlyWorkflow, loadGraph]);
 
-  useAutoRefresh(load, 30);
+  // Faster refresh so in-progress traces update while agents are still running.
+  useAutoRefresh(load, 10);
 
   const selectExecution = (execution: Execution) => {
     setSelected(execution.execution_id);
@@ -115,8 +132,8 @@ export function LiveExecutionsPage() {
             <h2 className="panel-title">Live & Recent Executions</h2>
             <p className="panel-subtitle">
               {runningCount
-                ? `${runningCount} currently running · select a tile to inspect the trace`
-                : 'Select a recent execution tile to inspect its workflow trace'}
+                ? `${runningCount} in progress · ${statusCounts(items)}`
+                : `All transactions · ${statusCounts(items)}`}
             </p>
           </div>
           <label className="muted" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>

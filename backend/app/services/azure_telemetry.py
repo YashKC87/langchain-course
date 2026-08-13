@@ -17,10 +17,29 @@ logger = logging.getLogger("control_center.azure_telemetry")
 APP_INSIGHTS_QUERY = "https://api.applicationinsights.io/v1/apps"
 INSIGHTS_API = "2015-05-01"
 DEPENDENCIES_QUERY = """
-dependencies
-| where timestamp > ago({hours}h)
-| where type == "AI" or customDimensions has "gen_ai.agent.id" or customDimensions has "microsoft.foundry"
-| project timestamp, id, name, success, duration, operation_Id, operation_ParentId, customDimensions, customMeasurements
+let window = ago({hours}h);
+union isfuzzy=true
+(
+  dependencies
+  | where timestamp > window
+  | where type == "AI"
+      or customDimensions has "gen_ai.agent.id"
+      or customDimensions has "gen_ai.operation.name"
+      or customDimensions has "microsoft.foundry"
+  | extend itemType = "dependency"
+  | project timestamp, id, name, success, duration, operation_Id, operation_ParentId, customDimensions, customMeasurements, itemType
+),
+(
+  requests
+  | where timestamp > window
+  | where customDimensions has "gen_ai.agent.id"
+      or customDimensions has "gen_ai.operation.name"
+      or customDimensions has "microsoft.foundry"
+      or name has "agent"
+      or name has "invoke"
+  | extend itemType = "request"
+  | project timestamp, id, name, success, duration, operation_Id, operation_ParentId, customDimensions, customMeasurements, itemType
+)
 | order by timestamp desc
 | take {limit}
 """
@@ -123,6 +142,10 @@ def _row_to_span(row: dict[str, Any]) -> dict[str, Any]:
     status = "ok"
     if str(success).lower() in ("false", "0"):
         status = "error"
+    # Incomplete / in-flight rows (no duration yet) stay running so live dashboards can trace them.
+    if duration_ms is None or duration_ms == "":
+        status = "running"
+        end_time = None
 
     trace_id = row.get("operation_Id") or row.get("operation_Id".lower())
     span_id = str(row.get("id") or "")
@@ -132,6 +155,8 @@ def _row_to_span(row: dict[str, Any]) -> dict[str, Any]:
     attrs.setdefault("cloud.provider", "azure")
     attrs.setdefault("platform.name", "Microsoft Foundry")
     attrs.setdefault("framework.name", "foundry")
+    if row.get("itemType"):
+        attrs["azure.item_type"] = row.get("itemType")
 
     return {
         "name": row.get("name") or attrs.get("gen_ai.operation.name") or "azure.dependency",
