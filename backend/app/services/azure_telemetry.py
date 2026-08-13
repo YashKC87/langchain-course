@@ -55,6 +55,10 @@ async def _app_insights_components(config: dict[str, Any], arm_token: str) -> li
         INSIGHTS_API,
     )
     configured = (config.get("app_insights") or os.environ.get("AZURE_APP_INSIGHTS") or "").strip()
+    # Ignore placeholder names from .env.example that are not real resources.
+    placeholders = {"ai-agent-metering", "app-insights", "applicationinsights"}
+    if configured.lower() in placeholders:
+        configured = ""
     if configured and configured.lower() not in ("__all__", "all", "*"):
         matched = [i for i in items if str(i.get("name") or "").lower() == configured.lower()]
         if matched:
@@ -145,7 +149,7 @@ def _row_to_span(row: dict[str, Any]) -> dict[str, Any]:
 async def fetch_telemetry(
     config: dict[str, Any],
     *,
-    hours: int = 2,
+    hours: int = 24,
     limit: int = 500,
 ) -> list[dict[str, Any]]:
     """Return simplified span payloads from Application Insights AI dependencies."""

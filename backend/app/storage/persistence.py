@@ -85,11 +85,21 @@ def _azure_resource_fields_from_env() -> dict[str, str]:
         "client_id": "AZURE_CLIENT_ID",
         "otel_endpoint": "OTEL_EXPORTER_OTLP_ENDPOINT",
     }
+    placeholders = {
+        "app_insights": {"ai-agent-metering", "app-insights", "applicationinsights"},
+        "log_analytics": {"law-agent-metering", "log-analytics"},
+        "foundry_project": {"agent-metering-project"},
+        "resource_group": {"rg-agent-metering-dev"},
+    }
     out: dict[str, str] = {}
     for field, env_key in mapping.items():
         val = os.environ.get(env_key)
-        if val:
-            out[field] = val
+        if not val:
+            continue
+        banned = placeholders.get(field) or set()
+        if str(val).strip().lower() in banned:
+            continue
+        out[field] = val
     return out
 
 

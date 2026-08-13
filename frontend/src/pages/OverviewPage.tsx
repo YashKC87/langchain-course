@@ -104,10 +104,12 @@ export function OverviewPage() {
 
       const liveItems = !execRes.empty ? execRes.items : [];
       const running = pickRunningExecution(liveItems);
-      setRunningExecution(running);
-      if (running) {
+      // Prefer currently running; otherwise show the most recent execution so traces remain visible.
+      const focus = running ?? liveItems[0] ?? null;
+      setRunningExecution(focus);
+      if (focus) {
         try {
-          setWorkflow(await api.getExecutionWorkflow(running.execution_id));
+          setWorkflow(await api.getExecutionWorkflow(focus.execution_id));
         } catch {
           setWorkflow(null);
         }
@@ -185,8 +187,8 @@ export function OverviewPage() {
             <h2 className="panel-title">Live Agent Workflow</h2>
             <p className="panel-subtitle">
               {runningExecution
-                ? `${runningExecution.agent_name ?? 'Agent'} · ${runningExecution.execution_id.slice(0, 12)}… · running`
-                : 'Shows only the agent execution that is currently running'}
+                ? `${runningExecution.agent_name ?? 'Agent'} · ${runningExecution.execution_id.slice(0, 12)}… · ${runningExecution.status}`
+                : 'Shows the currently running agent, or the most recent trace'}
             </p>
           </div>
           {runningExecution ? (
@@ -199,8 +201,8 @@ export function OverviewPage() {
           <WorkflowGraph graph={workflow} highlightRunning height={440} />
         ) : (
           <EmptyState
-            title="No agent currently running"
-            message="The live workflow appears here only while an agent execution is in progress."
+            title="No agent traces yet"
+            message="Run an agent or wait for Application Insights telemetry. Completed recent runs also appear here."
             compact
           />
         )}

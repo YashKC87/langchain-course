@@ -9,13 +9,15 @@ import { SectionTile } from '../components/SectionTile';
 import { WorkflowGraph } from '../components/WorkflowGraph';
 import { displayOrDash, formatDuration, formatNumber, formatTimestamp, statusTone } from '../utils/format';
 
-function pickRunningExecution(items: Execution[], preferredId?: string | null): Execution | null {
-  const running = items.filter((e) => e.status === 'running');
-  if (!running.length) return null;
-  if (preferredId && running.some((e) => e.execution_id === preferredId)) {
-    return running.find((e) => e.execution_id === preferredId) ?? null;
+function pickPreferredExecution(items: Execution[], preferredId?: string | null): Execution | null {
+  if (!items.length) return null;
+  if (preferredId) {
+    const preferred = items.find((e) => e.execution_id === preferredId);
+    if (preferred) return preferred;
   }
-  return [...running].sort((a, b) => {
+  const running = items.filter((e) => e.status === 'running');
+  const pool = running.length ? running : items;
+  return [...pool].sort((a, b) => {
     const at = a.start_time ?? a.timestamp ?? '';
     const bt = b.start_time ?? b.timestamp ?? '';
     return String(bt).localeCompare(String(at));
@@ -37,7 +39,7 @@ export function LiveExecutionsPage() {
   const [graph, setGraph] = useState<WFGraph | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [runningOnlyWorkflow, setRunningOnlyWorkflow] = useState(true);
+  const [runningOnlyWorkflow, setRunningOnlyWorkflow] = useState(false);
 
   const loadGraph = useCallback(async (executionId: string | null) => {
     if (!executionId) {
@@ -54,7 +56,11 @@ export function LiveExecutionsPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await api.getExecutions({ live_only: true });
+      // Prefer recent live window; fall back to all executions so completed runs remain traceable.
+      let res = await api.getExecutions({ live_only: true });
+      if (res.empty) {
+        res = await api.getExecutions();
+      }
       if (res.empty) {
         setEmpty({ title: res.title ?? 'No executions received', message: res.message ?? 'No live data' });
         setItems([]);
@@ -62,20 +68,24 @@ export function LiveExecutionsPage() {
         setSelected(null);
       } else {
         setEmpty(null);
-        setItems(res.items);
-        const running = pickRunningExecution(res.items, selected);
-        if (runningOnlyWorkflow) {
-          const id = running?.execution_id ?? null;
-          setSelected(id);
-          await loadGraph(id);
-        } else {
-          const id =
-            selected && res.items.some((e) => e.execution_id === selected)
-              ? selected
-              : running?.execution_id ?? res.items[0].execution_id;
-          setSelected(id);
-          await loadGraph(id);
+        const list = runningOnlyWorkflow
+          ? res.items.filter((e) => e.status === 'running')
+          : res.items;
+        if (!list.length) {
+          setItems(res.items);
+          setSelected(null);
+          setGraph(null);
+          setEmpty({
+            title: 'No agent currently running',
+            message: 'Turn off “Workflow: running only” to inspect recent completed agent traces.',
+          });
+          return;
         }
+        setItems(list);
+        const preferred = pickPreferredExecution(list, selected);
+        const id = preferred?.execution_id ?? null;
+        setSelected(id);
+        await loadGraph(id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load live executions');
@@ -87,7 +97,6 @@ export function LiveExecutionsPage() {
   useAutoRefresh(load, 30);
 
   const selectExecution = (execution: Execution) => {
-    if (runningOnlyWorkflow && execution.status !== 'running') return;
     setSelected(execution.execution_id);
     void loadGraph(execution.execution_id);
   };
@@ -106,8 +115,8 @@ export function LiveExecutionsPage() {
             <h2 className="panel-title">Live & Recent Executions</h2>
             <p className="panel-subtitle">
               {runningCount
-                ? `${runningCount} currently running · select a tile to inspect`
-                : 'No agent is running right now'}
+                ? `${runningCount} currently running · select a tile to inspect the trace`
+                : 'Select a recent execution tile to inspect its workflow trace'}
             </p>
           </div>
           <label className="muted" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
@@ -116,60 +125,51 @@ export function LiveExecutionsPage() {
               checked={runningOnlyWorkflow}
               onChange={(e) => setRunningOnlyWorkflow(e.target.checked)}
             />
-            Workflow: running only
+            Running only
           </label>
         </div>
         {empty ? (
           <EmptyState title={empty.title} message={empty.message} />
         ) : (
           <div className="execution-tile-list">
-            {items.map((e) => {
-              const isRunning = e.status === 'running';
-              const disabled = runningOnlyWorkflow && !isRunning;
-              return (
-                <SectionTile
-                  key={e.execution_id}
-                  title={displayOrDash(e.agent_name)}
-                  description={`${e.execution_id.slice(0, 18)}…`}
-                  value={formatNumber(e.total_tokens)}
-                  tone={tileTone(e.status)}
-                  selected={selected === e.execution_id}
-                  onClick={disabled ? undefined : () => selectExecution(e)}
-                  meta={
-                    <>
-                      <span className={`badge ${statusTone(e.status)}`}>{e.status}</span>
-                      <span>{formatTimestamp(e.start_time ?? e.timestamp)}</span>
-                      <span>{formatDuration(e.execution_duration_ms)}</span>
-                      {disabled ? <span>Completed — workflow shows running agent only</span> : null}
-                    </>
-                  }
-                />
-              );
-            })}
+            {items.map((e) => (
+              <SectionTile
+                key={e.execution_id}
+                title={displayOrDash(e.agent_name)}
+                description={`${e.execution_id.slice(0, 18)}…`}
+                value={formatNumber(e.total_tokens)}
+                tone={tileTone(e.status)}
+                selected={selected === e.execution_id}
+                onClick={() => selectExecution(e)}
+                meta={
+                  <>
+                    <span className={`badge ${statusTone(e.status)}`}>{e.status}</span>
+                    <span>{formatTimestamp(e.start_time ?? e.timestamp)}</span>
+                    <span>{formatDuration(e.execution_duration_ms)}</span>
+                  </>
+                }
+              />
+            ))}
           </div>
         )}
       </div>
       <div className="panel">
         <div className="panel-header">
           <div>
-            <h2 className="panel-title">Live Agent Workflow</h2>
+            <h2 className="panel-title">Agent Workflow Trace</h2>
             <p className="panel-subtitle">
-              {selectedItem?.status === 'running'
-                ? `${displayOrDash(selectedItem.agent_name)} · currently running · ${formatDuration(selectedItem.execution_duration_ms)}`
-                : runningOnlyWorkflow
-                  ? 'Showcase only the agent that is currently running'
-                  : selectedItem
-                    ? `${displayOrDash(selectedItem.agent_name)} · ${selectedItem.status}`
-                    : 'Select an execution tile'}
+              {selectedItem
+                ? `${displayOrDash(selectedItem.agent_name)} · ${selectedItem.status} · ${formatDuration(selectedItem.execution_duration_ms)}`
+                : 'Select an execution tile to view the trace'}
             </p>
           </div>
         </div>
-        {selectedItem?.status === 'running' || (!runningOnlyWorkflow && graph) ? (
+        {selectedItem && graph ? (
           <WorkflowGraph graph={graph} highlightRunning height={480} />
         ) : (
           <EmptyState
-            title="No agent currently running"
-            message="Live Agent Workflow shows only the in-progress agent. Start an agent run to see the live graph."
+            title="No execution selected"
+            message="Choose a live or recent agent run from the left to inspect its workflow and spans."
             compact
           />
         )}

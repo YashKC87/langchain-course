@@ -32,7 +32,7 @@ from app.models.domain import (
 )
 
 
-LIVE_EXECUTION_WINDOW_MINUTES = 120
+LIVE_EXECUTION_WINDOW_MINUTES = 24 * 60
 
 
 def _utcnow() -> datetime:

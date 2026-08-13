@@ -35,7 +35,10 @@ export function WorkflowPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await api.getExecutions();
+      let res = await api.getExecutions({ live_only: true });
+      if (res.empty) {
+        res = await api.getExecutions();
+      }
       if (res.empty) {
         setEmptyList({ title: res.title ?? 'No executions received', message: res.message ?? 'No live data' });
         setExecutions([]);
@@ -47,9 +50,9 @@ export function WorkflowPage() {
         setExecutions(res.items);
         const running = res.items.find((e) => e.status === 'running');
         const id =
-          selected && res.items.some((e) => e.execution_id === selected && e.status === 'running')
+          selected && res.items.some((e) => e.execution_id === selected)
             ? selected
-            : running?.execution_id ?? '';
+            : running?.execution_id ?? res.items[0].execution_id;
         setSelected(id);
         await loadGraph(id);
       }
@@ -65,6 +68,8 @@ export function WorkflowPage() {
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;
 
+  const selectedExec = executions.find((e) => e.execution_id === selected);
+
   return (
     <div className="stack">
       <div className="panel">
@@ -72,7 +77,7 @@ export function WorkflowPage() {
           <div>
             <h2 className="panel-title">Execution Workflow</h2>
             <p className="panel-subtitle">
-              Live graphical path for the currently running agent only
+              Trace a running agent when available, or inspect a recent completed run
             </p>
           </div>
           {executions.length > 0 ? (
@@ -83,28 +88,32 @@ export function WorkflowPage() {
                 setSelected(e.target.value);
                 void loadGraph(e.target.value);
               }}
-              style={{ minWidth: 280 }}
+              style={{ minWidth: 320 }}
             >
-              <option value="">Select a running execution</option>
-              {executions
-                .filter((e) => e.status === 'running')
-                .map((e) => (
-                  <option key={e.execution_id} value={e.execution_id}>
-                    {displayOrDash(e.agent_name)} · {e.execution_id.slice(0, 12)} · running ·{' '}
-                    {formatTimestamp(e.start_time ?? e.timestamp)}
-                  </option>
-                ))}
+              {executions.map((e) => (
+                <option key={e.execution_id} value={e.execution_id}>
+                  {displayOrDash(e.agent_name)} · {e.execution_id.slice(0, 12)} · {e.status} ·{' '}
+                  {formatTimestamp(e.start_time ?? e.timestamp)}
+                </option>
+              ))}
             </select>
           ) : null}
         </div>
         {emptyList ? (
           <EmptyState title={emptyList.title} message={emptyList.message} />
         ) : selected ? (
-          <WorkflowGraph graph={graph} height={460} />
+          <>
+            {selectedExec?.status === 'running' ? (
+              <p className="panel-subtitle" style={{ marginBottom: 10 }}>
+                Live run in progress
+              </p>
+            ) : null}
+            <WorkflowGraph graph={graph} height={460} />
+          </>
         ) : (
           <EmptyState
-            title="No agent currently running"
-            message="Workflow showcase shows only the agent execution that is in progress."
+            title="No executions to trace"
+            message="Run an agent or wait for Application Insights telemetry to arrive."
             compact
           />
         )}
