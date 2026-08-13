@@ -63,8 +63,17 @@ export function AzureResourceGroupField({
         return;
       }
       setResourceGroups(result.resource_groups ?? []);
+      if ((result.resource_groups ?? []).length === 0) {
+        setLoadError('No resource groups returned for this subscription.');
+      }
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load resource groups');
+      if (err instanceof Error && /not found/i.test(err.message)) {
+        setLoadError(
+          'Resource groups API is unavailable. Restart the backend (uvicorn) so it loads the latest code, then click Refresh list.',
+        );
+      } else {
+        setLoadError(err instanceof Error ? err.message : 'Failed to load resource groups');
+      }
     } finally {
       setLoadingGroups(false);
     }
