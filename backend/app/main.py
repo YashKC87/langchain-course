@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import get_settings
-from app.storage.persistence import apply_env_defaults, apply_saved_config
+from app.services.integrations import integration_service
+from app.storage.persistence import apply_env_defaults, apply_saved_config, auto_enable_integrations
 from app.storage.store import store
 
 logging.basicConfig(
@@ -25,6 +26,17 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     apply_saved_config(store.integrations)
     apply_env_defaults(store.integrations)
+    auto_enabled = auto_enable_integrations(store.integrations)
+    if auto_enabled:
+        logger.info("Auto-enabled integrations: %s", ", ".join(auto_enabled))
+    if settings.azure_auto_enable:
+        azure = store.integrations.get("azure")
+        if azure and azure.configured and not azure.enabled:
+            try:
+                await integration_service.enable("azure")
+                logger.info("Auto-enabled Azure integration (discovery on startup)")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Azure auto-enable failed: %s", exc)
     logger.info("Starting %s (env=%s)", settings.app_name, settings.app_env)
     logger.info(
         "Content capture default: %s | No synthetic telemetry will be seeded",

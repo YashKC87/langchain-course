@@ -37,17 +37,18 @@ class TelemetryIngestionService:
         - { "resourceSpans": [...] }  (OTLP JSON)
         - { "spans": [...] }          (simplified)
         """
-        if integration_id:
-            integ = store.integrations.get(integration_id)
-            if integ and not integ.enabled:
-                return {
-                    "accepted": False,
-                    "reason": "Integration Disabled",
-                    "message": f"Integration '{integration_id}' is disabled. Historical telemetry retained; new ingestion stopped.",
-                    "spans_ingested": 0,
-                    "executions_updated": 0,
-                    "agents_registered": 0,
-                }
+        if integration_id and not self._ingest_allowed(integration_id):
+            return {
+                "accepted": False,
+                "reason": "Integration Disabled",
+                "message": (
+                    f"Integration '{integration_id}' is disabled and no telemetry gateway "
+                    "is active. Enable OpenTelemetry or the target integration."
+                ),
+                "spans_ingested": 0,
+                "executions_updated": 0,
+                "agents_registered": 0,
+            }
 
         raw_spans = self._extract_spans(payload)
         if not raw_spans:
@@ -127,6 +128,16 @@ class TelemetryIngestionService:
             "agents_registered": agents_registered,
             "message": "Telemetry ingested and normalized.",
         }
+
+    @staticmethod
+    def _ingest_allowed(integration_id: str) -> bool:
+        integ = store.integrations.get(integration_id)
+        if integ and integ.enabled:
+            return True
+        otel = store.integrations.get("otel")
+        if otel and otel.enabled:
+            return True
+        return integ is None
 
     def _extract_spans(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         if not payload:

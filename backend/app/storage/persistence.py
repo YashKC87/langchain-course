@@ -10,6 +10,10 @@ from typing import Any
 from app.models.domain import Integration, IntegrationConfig, IntegrationStatus
 
 
+def _truthy_env(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def _data_dir() -> Path:
     path = Path(os.environ.get("CONTROL_CENTER_DATA_DIR", "./data"))
     path.mkdir(parents=True, exist_ok=True)
@@ -151,14 +155,46 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
             gcp.configured = True
             gcp.status = IntegrationStatus.DISABLED
 
+    ingest_url = os.environ.get("CONTROL_CENTER_INGEST_URL")
+    if ingest_url and azure:
+        merged = dict(azure.config.fields)
+        merged["otel_endpoint"] = ingest_url
+        azure.config.fields = merged
+
     otel = integrations.get("otel")
     if otel and not otel.configured:
+        auto = _truthy_env("TELEMETRY_AUTO_ENABLE")
         endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if not endpoint and auto:
+            endpoint = os.environ.get(
+                "OTEL_COLLECTOR_ENDPOINT", "http://localhost:4318"
+            )
         if endpoint:
             otel.config.fields = {
                 "collector_endpoint": endpoint,
-                "protocol": os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
+                "protocol": os.environ.get(
+                    "OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"
+                ),
             }
             otel.config.auth_method = "None"
             otel.configured = True
             otel.status = IntegrationStatus.DISABLED
+
+
+def auto_enable_integrations(integrations: dict[str, Integration]) -> list[str]:
+    """Enable configured telemetry integrations when env flags request it."""
+    enabled: list[str] = []
+
+    if _truthy_env("TELEMETRY_AUTO_ENABLE"):
+        otel = integrations.get("otel")
+        if otel and otel.configured and not otel.enabled:
+            otel.enabled = True
+            otel.status = IntegrationStatus.CONNECTED
+            otel.connection_health = "connected"
+            otel.error_message = None
+            integrations["otel"] = otel
+            enabled.append("otel")
+
+    if enabled:
+        save_integration_overrides(integrations)
+    return enabled

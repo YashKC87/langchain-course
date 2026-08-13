@@ -51,6 +51,15 @@ class Settings(BaseSettings):
     auth_enabled: bool = False
     default_role: str = "platform_administrator"
 
+    # Telemetry ingest — auto-enable configured integrations on startup
+    telemetry_auto_enable: bool = False
+    azure_auto_enable: bool = False
+    otel_exporter_otlp_endpoint: str = "http://localhost:4318"
+    otel_exporter_otlp_protocol: str = "http/protobuf"
+    control_center_ingest_url: str = (
+        "http://localhost:8000/api/v1/telemetry/otlp?integration_id=otel"
+    )
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

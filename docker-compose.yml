@@ -10,6 +10,9 @@ services:
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost:8080
       AUTH_ENABLED: "false"
       CONTENT_CAPTURE_ENABLED: "false"
+      TELEMETRY_AUTO_ENABLE: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      CONTROL_CENTER_INGEST_URL: http://backend:8000/api/v1/telemetry/otlp?integration_id=otel
     volumes:
       - ./backend/app:/app/app
     healthcheck:

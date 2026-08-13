@@ -3,6 +3,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+echo "==> OpenTelemetry Collector (ports 4317/4318) — optional, run in another terminal:"
+echo "    docker compose up otel-collector"
+
 echo "==> Backend (port 8000)"
 cd "$ROOT/backend"
 if [[ ! -d .venv ]]; then

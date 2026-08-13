@@ -435,3 +435,45 @@ async def test_waiting_for_telemetry_state(client):
     overview = (await client.get("/api/v1/overview")).json()
     assert overview["empty"] is True
     assert "Waiting for live telemetry" in overview["message"] or "No Live Telemetry" in overview["title"]
+
+
+@pytest.mark.asyncio
+async def test_ingest_via_otel_gateway_when_azure_disabled(client):
+    await client.put(
+        "/api/v1/integrations/otel/config",
+        json={"fields": {"collector_endpoint": "http://localhost:4318", "protocol": "http/protobuf"}},
+    )
+    await client.post("/api/v1/integrations/otel/toggle", json={"enabled": True})
+
+    res = await client.post(
+        "/api/v1/telemetry/spans?integration_id=azure",
+        json={
+            "spans": [{
+                "name": "agent.run",
+                "span_id": "azure-span-1",
+                "trace_id": "azure-trace-1",
+                "status": "ok",
+                "start_time": "2026-04-11T12:00:00+00:00",
+                "end_time": "2026-04-11T12:00:01+00:00",
+                "attributes": {"agent.id": "foundry-agent", "agent.name": "Foundry Agent"},
+            }]
+        },
+    )
+    data = res.json()
+    assert data["accepted"] is True
+    assert data["spans_ingested"] == 1
+
+
+def test_auto_enable_otel_from_env(monkeypatch):
+    from app.storage.persistence import apply_env_defaults, auto_enable_integrations
+    from app.storage.store import ObservabilityStore
+
+    monkeypatch.setenv("TELEMETRY_AUTO_ENABLE", "true")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+    fresh = ObservabilityStore()
+    apply_env_defaults(fresh.integrations)
+    assert fresh.integrations["otel"].configured is True
+    assert fresh.integrations["otel"].enabled is False
+    enabled = auto_enable_integrations(fresh.integrations)
+    assert enabled == ["otel"]
+    assert fresh.integrations["otel"].enabled is True
