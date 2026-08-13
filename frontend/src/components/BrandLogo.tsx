@@ -7,7 +7,7 @@ interface BrandLogoProps {
 export function BrandLogo({ size = 40, className = '' }: BrandLogoProps) {
   return (
     <img
-      src="/sigma-logo.svg"
+      src="/sigma-logo.svg?v=3"
       width={size}
       height={size}
       alt="Sigma Orion"
