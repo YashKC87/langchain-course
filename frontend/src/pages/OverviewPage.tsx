@@ -17,7 +17,6 @@ import type {
   OverviewKPIs,
   RAGSummary,
   ToolSummary,
-  WorkflowGraph as WFGraph,
 } from '../types';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { AgentTable } from '../components/AgentTable';
@@ -28,17 +27,14 @@ import { MetricCard } from '../components/MetricCard';
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel';
 import { OptimizationPanel } from '../components/OptimizationPanel';
 import { SectionTile } from '../components/SectionTile';
-import { WorkflowGraph } from '../components/WorkflowGraph';
-import { displayOrDash, formatNumber } from '../utils/format';
+import { displayOrDash, formatDuration, formatNumber, formatTimestamp, statusTone } from '../utils/format';
 
-function pickRunningExecution(items: Execution[]): Execution | null {
-  const running = items.filter((e) => e.status === 'running');
-  if (!running.length) return null;
-  return [...running].sort((a, b) => {
-    const at = a.start_time ?? a.timestamp ?? '';
-    const bt = b.start_time ?? b.timestamp ?? '';
-    return String(bt).localeCompare(String(at));
-  })[0];
+function tileTone(status: string): 'default' | 'running' | 'success' | 'warning' | 'failed' {
+  if (status === 'running') return 'running';
+  if (status === 'success') return 'success';
+  if (status === 'failed' || status === 'timeout') return 'failed';
+  if (status === 'warning') return 'warning';
+  return 'default';
 }
 
 export function OverviewPage() {
@@ -55,8 +51,7 @@ export function OverviewPage() {
   const [mcp, setMcp] = useState<MCPSummary[]>([]);
   const [rag, setRag] = useState<RAGSummary[]>([]);
   const [optimization, setOptimization] = useState<OptimizationFinding[]>([]);
-  const [workflow, setWorkflow] = useState<WFGraph | null>(null);
-  const [runningExecution, setRunningExecution] = useState<Execution | null>(null);
+  const [liveExecutions, setLiveExecutions] = useState<Execution[]>([]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -101,21 +96,7 @@ export function OverviewPage() {
       setMcp(!mcpRes.empty ? mcpRes.items : []);
       setRag(!ragRes.empty ? ragRes.items : []);
       setOptimization(!optRes.empty ? optRes.items : []);
-
-      const liveItems = !execRes.empty ? execRes.items : [];
-      const running = pickRunningExecution(liveItems);
-      // Prefer currently running; otherwise show the most recent execution so traces remain visible.
-      const focus = running ?? liveItems[0] ?? null;
-      setRunningExecution(focus);
-      if (focus) {
-        try {
-          setWorkflow(await api.getExecutionWorkflow(focus.execution_id));
-        } catch {
-          setWorkflow(null);
-        }
-      } else {
-        setWorkflow(null);
-      }
+      setLiveExecutions(!execRes.empty ? execRes.items.slice(0, 6) : []);
     } catch (err) {
       setError(formatApiError(err));
     } finally {
@@ -184,27 +165,39 @@ export function OverviewPage() {
       <div className="panel">
         <div className="panel-header">
           <div>
-            <h2 className="panel-title">Live Agent Workflow</h2>
-            <p className="panel-subtitle">
-              {runningExecution
-                ? `${runningExecution.agent_name ?? 'Agent'} · ${runningExecution.execution_id.slice(0, 12)}… · ${runningExecution.status}`
-                : 'Shows the currently running agent, or the most recent trace'}
-            </p>
+            <h2 className="panel-title">Live Executions</h2>
+            <p className="panel-subtitle">Recent agent runs · open Live Executions for full workflow traces</p>
           </div>
-          {runningExecution ? (
-            <button type="button" className="btn" onClick={() => navigate('/live-executions')}>
-              Open live view
-            </button>
-          ) : null}
+          <button type="button" className="btn" onClick={() => navigate('/live-executions')}>
+            Open live view
+          </button>
         </div>
-        {runningExecution && workflow ? (
-          <WorkflowGraph graph={workflow} highlightRunning height={440} />
-        ) : (
+        {liveExecutions.length === 0 ? (
           <EmptyState
-            title="No agent traces yet"
-            message="Run an agent or wait for Application Insights telemetry. Completed recent runs also appear here."
+            title="No live executions"
+            message="Run an agent or wait for Application Insights telemetry."
             compact
           />
+        ) : (
+          <div className="section-tile-grid compact">
+            {liveExecutions.map((e) => (
+              <SectionTile
+                key={e.execution_id}
+                title={displayOrDash(e.agent_name)}
+                description={`${e.execution_id.slice(0, 14)}…`}
+                value={formatNumber(e.total_tokens)}
+                tone={tileTone(e.status)}
+                onClick={() => navigate('/live-executions')}
+                meta={
+                  <>
+                    <span className={`badge ${statusTone(e.status)}`}>{e.status}</span>
+                    <span>{formatTimestamp(e.start_time ?? e.timestamp)}</span>
+                    <span>{formatDuration(e.execution_duration_ms)}</span>
+                  </>
+                }
+              />
+            ))}
+          </div>
         )}
       </div>
 
