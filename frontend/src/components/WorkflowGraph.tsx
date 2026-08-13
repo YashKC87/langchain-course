@@ -109,10 +109,10 @@ function toEdges(graph: WFGraph): Edge[] {
       target: e.target,
       label: e.label ?? e.edge_type?.replace(/_/g, ' ') ?? '',
       animated: graph.status === 'running',
-      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#6b7c90' },
-      style: { stroke: '#6b7c90', strokeWidth: 1.5 },
-      labelStyle: { fill: '#9aabbf', fontSize: 10, fontFamily: 'IBM Plex Sans' },
-      labelBgStyle: { fill: '#111821', fillOpacity: 0.92 },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#7a8a9e' },
+      style: { stroke: '#7a8a9e', strokeWidth: 1.5 },
+      labelStyle: { fill: '#4b5c73', fontSize: 10, fontFamily: 'IBM Plex Sans' },
+      labelBgStyle: { fill: '#ffffff', fillOpacity: 0.95 },
       labelBgPadding: [4, 6] as [number, number],
     });
   }
@@ -186,8 +186,8 @@ function WorkflowGraphInner({
             if (s === 'warning') return '#e8a838';
             return '#7a8a9e';
           }}
-          maskColor="rgba(11,15,20,0.7)"
-          style={{ background: '#0e141c' }}
+          maskColor="rgba(255,255,255,0.7)"
+          style={{ background: '#f7f9fb' }}
           pannable
           zoomable
         />

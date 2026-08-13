@@ -14,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { FiltersProvider } from '../hooks/useFilters';
+import { BrandLogo } from './BrandLogo';
 import { GlobalFilterBar } from './GlobalFilterBar';
 import { LiveStatus } from './LiveStatus';
 
@@ -76,8 +77,13 @@ export function Layout({
       <div className="app-shell">
         <aside className="sidebar">
           <div className="sidebar-brand">
-            <div className="sidebar-brand-mark">Control Center</div>
-            <div className="sidebar-brand-title">Agent Metering &amp; Observability</div>
+            <div className="sidebar-brand-row">
+              <BrandLogo size={40} />
+              <div className="sidebar-brand-text">
+                <div className="sidebar-brand-mark">Control Center</div>
+                <div className="sidebar-brand-title">Agent Metering &amp; Observability</div>
+              </div>
+            </div>
           </div>
           <nav className="sidebar-nav">
             {NAV.map((item) => (
