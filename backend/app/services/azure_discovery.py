@@ -270,54 +270,82 @@ async def list_ai_accounts(config: dict[str, Any], arm_token: str) -> list[dict[
     return list(data.get("value") or [])
 
 
+async def _list_projects_for_account(acct_id: str, arm_token: str) -> list[str]:
+    """List Foundry project names for a Cognitive Services account."""
+    try:
+        data = await _arm_get(f"{acct_id}/projects", arm_token, "2025-04-01-preview")
+    except AzureDiscoveryError:
+        return []
+    projects: list[str] = []
+    for item in data.get("value") or []:
+        name = str(item.get("name") or "")
+        if not name:
+            continue
+        projects.append(name.split("/")[-1])
+    return projects
+
+
 async def _list_foundry_agents(
     *,
     account_name: str,
     project_name: str,
     ai_token: str,
+    endpoint: str | None = None,
 ) -> list[dict[str, Any]]:
-    base = f"https://{account_name}.services.ai.azure.com/api/projects/{project_name}"
-    url = f"{base}/agents"
+    bases: list[str] = []
+    if endpoint:
+        bases.append(str(endpoint).rstrip("/"))
+    bases.append(f"https://{account_name}.services.ai.azure.com")
+
     agents: list[dict[str, Any]] = []
-    params: dict[str, Any] = {"api-version": FOUNDRY_API, "limit": 100}
+    seen_ids: set[str] = set()
+    api_versions = ("2025-05-15-preview", FOUNDRY_API)
+
     async with httpx.AsyncClient(timeout=60.0) as client:
-        while True:
-            res = await client.get(
-                url,
-                params=params,
-                headers={"Authorization": f"Bearer {ai_token}"},
-            )
-            if res.status_code in (401, 403):
-                logger.warning(
-                    "Foundry agents list denied for %s/%s: %s",
-                    account_name,
-                    project_name,
-                    res.status_code,
-                )
-                break
-            if res.status_code == 404:
-                # Try legacy assistants path used by some Foundry builds
-                break
-            if res.status_code >= 400:
-                logger.warning(
-                    "Foundry agents list failed for %s/%s: %s %s",
-                    account_name,
-                    project_name,
-                    res.status_code,
-                    res.text[:300],
-                )
-                break
-            payload = res.json()
-            for item in payload.get("data") or payload.get("value") or []:
-                agents.append(item)
-            after = payload.get("last_id") or payload.get("next_cursor")
-            if not after or not (payload.get("has_more") or payload.get("nextLink")):
-                # also support after cursor style
-                if payload.get("has_more") and after:
+        for base in bases:
+            for api_version in api_versions:
+                url = f"{base}/api/projects/{project_name}/agents"
+                params: dict[str, Any] = {"api-version": api_version, "limit": 100}
+                while True:
+                    res = await client.get(
+                        url,
+                        params=params,
+                        headers={"Authorization": f"Bearer {ai_token}"},
+                    )
+                    if res.status_code in (401, 403):
+                        logger.warning(
+                            "Foundry agents list denied for %s/%s: %s",
+                            account_name,
+                            project_name,
+                            res.status_code,
+                        )
+                        break
+                    if res.status_code == 404:
+                        break
+                    if res.status_code >= 400:
+                        logger.warning(
+                            "Foundry agents list failed for %s/%s: %s %s",
+                            account_name,
+                            project_name,
+                            res.status_code,
+                            res.text[:300],
+                        )
+                        break
+                    payload = res.json()
+                    for item in payload.get("data") or payload.get("value") or []:
+                        item_id = str(item.get("id") or item.get("name") or "")
+                        if item_id and item_id not in seen_ids:
+                            seen_ids.add(item_id)
+                            agents.append(item)
+                    after = payload.get("last_id") or payload.get("next_cursor")
+                    if not after or not (payload.get("has_more") or payload.get("nextLink")):
+                        if payload.get("has_more") and after:
+                            params["after"] = after
+                            continue
+                        break
                     params["after"] = after
-                    continue
-                break
-            params["after"] = after
+                if agents:
+                    return agents
     return agents
 
 
@@ -465,13 +493,22 @@ async def discover_agents_in_subscription(config: dict[str, Any]) -> dict[str, A
             except IndexError:
                 rg_from_id = rg
 
-        # Foundry agents (project data plane)
-        for proj in {project, "_project"}:
+        # Foundry agents — enumerate ARM projects per account, not only configured name
+        projects_to_scan: set[str] = set()
+        if project:
+            projects_to_scan.add(str(project))
+        projects_to_scan.add("_project")
+        if acct_id:
+            for arm_project in await _list_projects_for_account(acct_id, arm_token):
+                projects_to_scan.add(arm_project)
+
+        for proj in projects_to_scan:
             try:
                 items = await _list_foundry_agents(
                     account_name=str(name),
                     project_name=str(proj),
                     ai_token=ai_token,
+                    endpoint=str(endpoint) if endpoint else None,
                 )
                 for item in items:
                     discovered.append(
