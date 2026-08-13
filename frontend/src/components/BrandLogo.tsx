@@ -3,8 +3,8 @@ interface BrandLogoProps {
   className?: string;
 }
 
-/** Reversed Sigma mark — white Σ on a solid red circle. */
-export function BrandLogo({ size = 36, className = '' }: BrandLogoProps) {
+/** Red Σ in a red circle — matches the brand mark (outline on white). */
+export function BrandLogo({ size = 40, className = '' }: BrandLogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -15,12 +15,20 @@ export function BrandLogo({ size = 36, className = '' }: BrandLogoProps) {
       role="img"
       aria-label="Sigma Orion"
     >
-      <circle cx="32" cy="32" r="30" fill="#E31C23" />
-      <path
-        d="M18 18h28l-18 14 18 14H18"
+      <circle
+        cx="32"
+        cy="32"
+        r="28"
         fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="4.5"
+        stroke="#E31C23"
+        strokeWidth="3.5"
+      />
+      {/* Standard upright Σ — top bar, middle peak, bottom bar */}
+      <path
+        d="M20 19 H44 L32 32 L44 45 H20"
+        fill="none"
+        stroke="#E31C23"
+        strokeWidth="4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
