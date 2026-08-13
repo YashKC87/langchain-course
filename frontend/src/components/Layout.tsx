@@ -4,6 +4,7 @@ import {
   Boxes,
   BrainCircuit,
   Cable,
+  FileDown,
   Gauge,
   GitBranch,
   LayoutDashboard,
@@ -30,6 +31,7 @@ const NAV = [
   { to: '/integrations', label: 'Integrations', icon: Cable },
   { to: '/observability', label: 'Observability', icon: Activity },
   { to: '/optimization', label: 'Optimization', icon: Sparkles },
+  { to: '/reports', label: 'Reports', icon: FileDown },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -45,6 +47,7 @@ const TITLES: Record<string, string> = {
   '/integrations': 'Integrations',
   '/observability': 'Observability',
   '/optimization': 'Optimization',
+  '/reports': 'Reports',
   '/settings': 'Settings',
 };
 
@@ -70,7 +73,7 @@ export function Layout({
   const location = useLocation();
   const title =
     TITLES[location.pathname] ??
-    (location.pathname.startsWith('/agents/') ? 'Agent Detail' : 'Control Center');
+    (location.pathname.startsWith('/agents/') ? 'Agent Detail' : 'Sigma Orion');
 
   return (
     <FiltersProvider>

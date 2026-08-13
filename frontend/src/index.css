@@ -140,6 +140,10 @@ code,
 .brand-logo {
   flex-shrink: 0;
   display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  background: #ffffff;
 }
 
 .sidebar-brand-text {
@@ -1505,6 +1509,34 @@ code,
   max-height: 560px;
   overflow: auto;
   padding-right: 2px;
+}
+
+.report-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.report-hero-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.report-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-red);
+  letter-spacing: -0.01em;
+}
+
+.report-hero-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 2px;
 }
 
 .error-message-block {

@@ -13,6 +13,7 @@ import { ObservabilityPage } from './pages/ObservabilityPage';
 import { OptimizationPage } from './pages/OptimizationPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { RagPage } from './pages/RagPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ToolsMcpPage } from './pages/ToolsMcpPage';
 import { WorkflowPage } from './pages/WorkflowPage';
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="integrations" element={<IntegrationsPage />} />
           <Route path="observability" element={<ObservabilityPage />} />
           <Route path="optimization" element={<OptimizationPage />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
