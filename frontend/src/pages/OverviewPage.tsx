@@ -27,15 +27,7 @@ import { MetricCard } from '../components/MetricCard';
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel';
 import { OptimizationPanel } from '../components/OptimizationPanel';
 import { SectionTile } from '../components/SectionTile';
-import { displayOrDash, formatDuration, formatNumber, formatTimestamp, statusTone } from '../utils/format';
-
-function tileTone(status: string): 'default' | 'running' | 'success' | 'warning' | 'failed' {
-  if (status === 'running') return 'running';
-  if (status === 'success') return 'success';
-  if (status === 'failed' || status === 'timeout') return 'failed';
-  if (status === 'warning') return 'warning';
-  return 'default';
-}
+import { displayOrDash, formatDuration, formatNumber } from '../utils/format';
 
 export function OverviewPage() {
   const navigate = useNavigate();
@@ -179,22 +171,14 @@ export function OverviewPage() {
             compact
           />
         ) : (
-          <div className="section-tile-grid compact">
+          <div className="grid-kpi live-executions-kpi">
             {liveExecutions.map((e) => (
-              <SectionTile
+              <MetricCard
                 key={e.execution_id}
-                title={displayOrDash(e.agent_name)}
-                description={`${e.execution_id.slice(0, 14)}…`}
-                value={formatNumber(e.total_tokens)}
-                tone={tileTone(e.status)}
+                label={displayOrDash(e.agent_name)}
+                displayValue={formatNumber(e.total_tokens)}
+                subtitle={`${e.status} · ${formatDuration(e.execution_duration_ms)}`}
                 onClick={() => navigate('/live-executions')}
-                meta={
-                  <>
-                    <span className={`badge ${statusTone(e.status)}`}>{e.status}</span>
-                    <span>{formatTimestamp(e.start_time ?? e.timestamp)}</span>
-                    <span>{formatDuration(e.execution_duration_ms)}</span>
-                  </>
-                }
               />
             ))}
           </div>

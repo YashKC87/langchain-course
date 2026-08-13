@@ -443,6 +443,10 @@ code,
   gap: 12px;
 }
 
+.live-executions-kpi {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
@@ -1548,6 +1552,9 @@ code,
   .grid-kpi {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .live-executions-kpi {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
   .grid-2,
   .grid-3,
   .layout-split {
@@ -1590,6 +1597,9 @@ code,
   .grid-kpi {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .live-executions-kpi {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
   .waterfall-row {
     grid-template-columns: 100px 1fr 56px;
   }
@@ -1603,6 +1613,9 @@ code,
     grid-template-columns: 1fr;
   }
   .grid-kpi {
+    grid-template-columns: 1fr;
+  }
+  .live-executions-kpi {
     grid-template-columns: 1fr;
   }
 }
