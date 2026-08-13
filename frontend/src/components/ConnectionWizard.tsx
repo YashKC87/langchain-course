@@ -51,11 +51,15 @@ const SETUP_GUIDES: Record<string, { title: string; steps: string[] }> = {
     ],
   },
   aws: {
-    title: 'AWS setup',
+    title: 'Connect your AWS account',
     steps: [
-      'Copy the 12-digit AWS Account ID and target Region (e.g. us-east-1).',
-      'Choose IAM Role or Workload Identity — avoid long-lived access keys in the UI.',
-      'Save → Test → Enable. Connect Bedrock/CloudWatch telemetry via OpenTelemetry or AgentCore export.',
+      '1. AWS Console → top-right account menu → copy the 12-digit Account ID.',
+      '2. Choose the Bedrock region where agents are deployed (e.g. us-east-1).',
+      '3. Auth Method: IAM Role if this Control Center runs on EC2/EKS with a role attached; otherwise set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY in .env.',
+      '4. Grant the IAM principal: sts:GetCallerIdentity, bedrock:ListAgents, bedrock:GetAgent. For AgentCore: bedrock-agentcore:ListAgentRuntimes.',
+      '5. Save → Test Connection → turn AWS ON.',
+      '6. Click Refresh Discovery to list Amazon Bedrock Agents and AgentCore runtimes in that region.',
+      '7. Agents also appear when live OpenTelemetry telemetry arrives from your AWS workloads.',
     ],
   },
   gcp: {

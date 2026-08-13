@@ -104,6 +104,16 @@ def _token(credential: Any, audience: str) -> str:
         token = credential.get_token(f"{audience}/.default")
         return token.token
     except Exception as exc:
+        detail = str(exc)
+        if "IMDS" in detail or "ManagedIdentityCredential" in detail:
+            raise AzureDiscoveryError(
+                "Managed Identity is not available on this host (no Azure IMDS endpoint). "
+                "Switch Auth Method to Service Principal, then set AZURE_CLIENT_ID and "
+                "AZURE_CLIENT_SECRET in .env (or enter Client ID + Client Secret in Configure). "
+                "Grant the app Reader on the subscription and Azure AI User on the Foundry account, "
+                "restart the backend, and click Refresh Discovery.",
+                stage="authenticate",
+            ) from exc
         raise AzureDiscoveryError(
             "Azure authentication failed while acquiring a token for "
             f"{audience}. If you are not running on Azure with Managed Identity, "

@@ -72,9 +72,18 @@ class AWSConnector(BaseConnector):
         return {"ok": True, "message": f"AWS auth method '{method}' configured."}
 
     async def validate_permissions(self, config: dict[str, Any]) -> dict[str, Any]:
+        from app.services.aws_discovery import validate_aws_connection
+
+        result = await validate_aws_connection(config)
+        if not result.get("ok", False):
+            return result
         return {
             "ok": True,
-            "message": "Ensure CloudWatch and Bedrock/AgentCore read permissions.",
+            "message": result.get("message")
+            or (
+                "AWS credentials validated. Ensure bedrock:ListAgents for Bedrock Agents "
+                "and bedrock-agentcore:ListAgentRuntimes for AgentCore discovery."
+            ),
         }
 
     async def validate_telemetry_source(self, config: dict[str, Any]) -> dict[str, Any]:
@@ -86,7 +95,13 @@ class AWSConnector(BaseConnector):
         return {"ok": True, "message": "AWS telemetry source configuration present."}
 
     async def discover_agents(self, config: dict[str, Any]) -> list[dict[str, Any]]:
-        return []
+        result = await self.discover_detailed(config)
+        return list(result.get("agents") or [])
+
+    async def discover_detailed(self, config: dict[str, Any]) -> dict[str, Any]:
+        from app.services.aws_discovery import discover_agents_in_account
+
+        return await discover_agents_in_account(config)
 
     async def fetch_telemetry(self, config: dict[str, Any]) -> list[dict[str, Any]]:
         return []

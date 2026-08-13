@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from app.connectors.cloud import AzureConnector
+from app.connectors.cloud import AWSConnector, AzureConnector
 from app.models.domain import (
     ActivityEvent,
     Integration,
@@ -142,6 +142,42 @@ class IntegrationService:
                 ),
             }
 
+        if integ.id in ("aws", "bedrock", "bedrock-agents", "agentcore") or (
+            integ.provider == "aws" and integ.id in ("aws", "bedrock", "bedrock-agents", "agentcore")
+        ):
+            connector = AWSConnector()
+            cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+            auth = await connector.authenticate(cfg)
+            if not auth.get("ok", False):
+                return {
+                    "ok": False,
+                    "stage": "authenticate",
+                    "message": auth.get("message", "AWS authentication failed."),
+                }
+            perm = await connector.validate_permissions(cfg)
+            if not perm.get("ok", False):
+                return {
+                    "ok": False,
+                    "stage": perm.get("stage", "permissions"),
+                    "message": perm.get("message", "AWS permission validation failed."),
+                }
+            telemetry = await connector.validate_telemetry_source(cfg)
+            if not telemetry.get("ok", False):
+                return {
+                    "ok": False,
+                    "stage": "telemetry",
+                    "message": telemetry.get("message", "AWS telemetry validation failed."),
+                }
+            return {
+                "ok": True,
+                "stage": "complete",
+                "message": perm.get("message")
+                or (
+                    f"AWS account {integ.config.fields.get('account_id', '')} validated. "
+                    "Enable the integration, then click Refresh Discovery."
+                ),
+            }
+
         # Endpoint presence check for OTel-style connectors
         endpoint = integ.config.fields.get("collector_endpoint") or integ.config.fields.get(
             "otel_endpoint"
@@ -196,6 +232,13 @@ class IntegrationService:
             if not integ.config.secret_refs.get("client_secret") and not integ.config.fields.get("client_secret"):
                 return "Service Principal authentication requires Client Secret (stored as a secure reference)."
         return None
+
+    def _supports_agent_discovery(self, integ: Integration) -> bool:
+        if integ.id == "azure" or integ.provider == "azure":
+            return True
+        if integ.id in ("aws", "bedrock", "bedrock-agents", "agentcore"):
+            return True
+        return False
 
     async def enable(self, integration_id: str) -> Integration:
         integ = store.integrations.get(integration_id)
@@ -272,17 +315,18 @@ class IntegrationService:
         # 5. Test Telemetry Access
         add("Test Telemetry Access", "success", "Ready to receive telemetry.")
 
-        # 6. Discover Agents — real Azure discovery when possible; never fabricate
+        # 6. Discover Agents — live cloud discovery when supported; never fabricate
         discovery_message = "Registry will update when agents are discovered."
         discovered_count = sum(1 for a in store.agents.values() if a.integration_id == integration_id)
-        if integ.id == "azure" or integ.provider == "azure":
+        if self._supports_agent_discovery(integ):
             try:
-                from app.connectors.cloud import AzureConnector
                 from app.services.discovery import register_discovered_agents
 
-                connector = AzureConnector()
+                if integ.id == "azure" or integ.provider == "azure":
+                    connector = AzureConnector()
+                else:
+                    connector = AWSConnector()
                 cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
-                # Include secret refs for SP when available as env fallback
                 detail = await connector.discover_detailed(cfg)
                 agents = detail.get("agents") or []
                 counts = register_discovered_agents(agents, integration_id=integration_id)
@@ -377,7 +421,7 @@ class IntegrationService:
         return await self.disable(integration_id)
 
     async def discover(self, integration_id: str) -> dict[str, Any]:
-        """Refresh agent discovery for an integration (Azure subscription scan)."""
+        """Refresh agent discovery for a cloud integration."""
         integ = store.integrations.get(integration_id)
         if not integ:
             raise KeyError(f"Unknown integration: {integration_id}")
@@ -394,72 +438,83 @@ class IntegrationService:
                 "agents": [],
             }
 
+        if not self._supports_agent_discovery(integ):
+            return {
+                "ok": True,
+                "message": (
+                    "Provider API discovery is not implemented for this integration yet. "
+                    "Agents appear when live telemetry arrives."
+                ),
+                "agents": [
+                    a.model_dump()
+                    for a in store.agents.values()
+                    if a.integration_id == integration_id
+                ],
+                "accounts_scanned": [],
+                "errors": [],
+            }
+
+        from app.services.discovery import register_discovered_agents
+
         if integ.id == "azure" or integ.provider == "azure":
-            from app.connectors.cloud import AzureConnector
-            from app.services.discovery import register_discovered_agents
             from app.services.azure_discovery import AzureDiscoveryError
 
             connector = AzureConnector()
-            cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
-            try:
-                detail = await connector.discover_detailed(cfg)
-            except AzureDiscoveryError as exc:
-                integ.status = IntegrationStatus.WARNING
-                integ.error_message = exc.message
-                store.integrations[integration_id] = integ
-                save_integration_overrides(store.integrations)
-                return {
-                    "ok": False,
-                    "stage": exc.stage,
-                    "message": exc.message,
-                    "agents": [],
-                    "accounts_scanned": [],
-                    "errors": [exc.message],
-                }
+            discovery_error = AzureDiscoveryError
+            extra_keys = ("subscription_id", "resource_group", "foundry_project")
+        else:
+            from app.services.aws_discovery import AWSDiscoveryError
 
-            agents = detail.get("agents") or []
-            counts = register_discovered_agents(agents, integration_id=integration_id)
-            integ.error_message = None
-            if agents:
-                integ.status = IntegrationStatus.CONNECTED
+            connector = AWSConnector()
+            discovery_error = AWSDiscoveryError
+            extra_keys = ("account_id", "region")
+
+        cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+        try:
+            detail = await connector.discover_detailed(cfg)
+        except discovery_error as exc:
+            integ.status = IntegrationStatus.WARNING
+            integ.error_message = exc.message
             store.integrations[integration_id] = integ
             save_integration_overrides(store.integrations)
-
-            await store.record_activity(
-                ActivityEvent(
-                    id=f"integ-discover-{integration_id}-{datetime.now(timezone.utc).timestamp()}",
-                    timestamp=datetime.now(timezone.utc),
-                    event_type="agent_discovery",
-                    message=detail.get("message") or f"Discovery finished for {integ.name}",
-                    severity="info",
-                )
-            )
             return {
-                "ok": True,
-                "message": detail.get("message"),
-                "agents": agents,
-                "counts": counts,
-                "accounts_scanned": detail.get("accounts_scanned") or [],
-                "errors": detail.get("errors") or [],
-                "subscription_id": detail.get("subscription_id"),
-                "resource_group": detail.get("resource_group"),
-                "foundry_project": detail.get("foundry_project"),
+                "ok": False,
+                "stage": exc.stage,
+                "message": exc.message,
+                "agents": [],
+                "accounts_scanned": [],
+                "errors": [exc.message],
             }
 
-        return {
+        agents = detail.get("agents") or []
+        counts = register_discovered_agents(agents, integration_id=integration_id)
+        integ.error_message = None
+        if agents:
+            integ.status = IntegrationStatus.CONNECTED
+        store.integrations[integration_id] = integ
+        save_integration_overrides(store.integrations)
+
+        await store.record_activity(
+            ActivityEvent(
+                id=f"integ-discover-{integration_id}-{datetime.now(timezone.utc).timestamp()}",
+                timestamp=datetime.now(timezone.utc),
+                event_type="agent_discovery",
+                message=detail.get("message") or f"Discovery finished for {integ.name}",
+                severity="info",
+            )
+        )
+        response: dict[str, Any] = {
             "ok": True,
-            "message": (
-                "Provider API discovery is not implemented for this integration yet. "
-                "Agents appear when live telemetry arrives."
-            ),
-            "agents": [
-                a.model_dump()
-                for a in store.agents.values()
-                if a.integration_id == integration_id
-            ],
-            "accounts_scanned": [],
-            "errors": [],
+            "message": detail.get("message"),
+            "agents": agents,
+            "counts": counts,
+            "accounts_scanned": detail.get("accounts_scanned") or [],
+            "errors": detail.get("errors") or [],
         }
+        for key in extra_keys:
+            if detail.get(key) is not None:
+                response[key] = detail[key]
+        return response
 
     def health_panel(self) -> list[dict[str, Any]]:
         rows = []

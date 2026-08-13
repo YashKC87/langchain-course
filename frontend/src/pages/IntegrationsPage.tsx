@@ -90,10 +90,16 @@ export function IntegrationsPage() {
       const result = await api.discoverIntegration(integration.id);
       const count = result.counts?.total ?? result.agents?.length ?? 0;
       if (result.ok) {
+        const scope =
+          result.subscription_id != null
+            ? `subscription ${result.subscription_id}`
+            : result.account_id != null
+              ? `account ${result.account_id}`
+              : '';
         setProgressNote(
           result.message ||
             (count
-              ? `Discovered ${count} agent(s) in subscription ${result.subscription_id ?? ''}.`
+              ? `Discovered ${count} agent(s)${scope ? ` in ${scope}` : ''}.`
               : 'Discovery finished — no agents found.'),
         );
       } else {

@@ -25,7 +25,10 @@ export function IntegrationCard({
   const canDiscover =
     Boolean(onDiscover) &&
     integration.enabled &&
-    (integration.id === 'azure' || integration.provider === 'azure');
+    (integration.id === 'azure' ||
+      integration.provider === 'azure' ||
+      integration.id === 'aws' ||
+      ['bedrock', 'bedrock-agents', 'agentcore'].includes(integration.id));
 
   return (
     <div className="integration-card">
