@@ -11,7 +11,6 @@ import type {
   AgentMeteringRow,
   AttentionItem,
   Execution,
-  IntegrationHealthItem,
   MCPSummary,
   ModelSummary,
   OptimizationFinding,
@@ -24,14 +23,13 @@ import { ActivityFeed } from '../components/ActivityFeed';
 import { AgentTable } from '../components/AgentTable';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
-import { IntegrationSwitch } from '../components/IntegrationSwitch';
 import { LoadingState } from '../components/LoadingState';
 import { MetricCard } from '../components/MetricCard';
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel';
 import { OptimizationPanel } from '../components/OptimizationPanel';
 import { SectionTile } from '../components/SectionTile';
 import { WorkflowGraph } from '../components/WorkflowGraph';
-import { displayOrDash, formatNumber, formatRelative, statusTone } from '../utils/format';
+import { displayOrDash, formatNumber } from '../utils/format';
 
 function pickRunningExecution(items: Execution[]): Execution | null {
   const running = items.filter((e) => e.status === 'running');
@@ -52,7 +50,6 @@ export function OverviewPage() {
   const [metering, setMetering] = useState<AgentMeteringRow[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
-  const [health, setHealth] = useState<IntegrationHealthItem[]>([]);
   const [models, setModels] = useState<ModelSummary[]>([]);
   const [tools, setTools] = useState<ToolSummary[]>([]);
   const [mcp, setMcp] = useState<MCPSummary[]>([]);
@@ -60,7 +57,6 @@ export function OverviewPage() {
   const [optimization, setOptimization] = useState<OptimizationFinding[]>([]);
   const [workflow, setWorkflow] = useState<WFGraph | null>(null);
   const [runningExecution, setRunningExecution] = useState<Execution | null>(null);
-  const [toggling, setToggling] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -70,7 +66,6 @@ export function OverviewPage() {
         meteringRes,
         activityRes,
         attentionRes,
-        healthRes,
         modelsRes,
         toolsRes,
         mcpRes,
@@ -82,7 +77,6 @@ export function OverviewPage() {
         api.getAgentMetering(),
         api.getActivity(),
         api.getNeedsAttention(),
-        api.getIntegrationHealth(),
         api.getModels(),
         api.getTools(),
         api.getMcp(),
@@ -102,7 +96,6 @@ export function OverviewPage() {
       setMetering(!meteringRes.empty ? meteringRes.items : []);
       setActivity(!activityRes.empty ? activityRes.items : []);
       setAttention(!attentionRes.empty ? attentionRes.items : []);
-      setHealth(healthRes.items ?? []);
       setModels(!modelsRes.empty ? modelsRes.items : []);
       setTools(!toolsRes.empty ? toolsRes.items : []);
       setMcp(!mcpRes.empty ? mcpRes.items : []);
@@ -129,18 +122,6 @@ export function OverviewPage() {
   }, []);
 
   useAutoRefresh(load, 30);
-
-  const toggleHealth = async (item: IntegrationHealthItem, enabled: boolean) => {
-    setToggling(item.id);
-    try {
-      await api.toggleIntegration(item.id, enabled);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Toggle failed');
-    } finally {
-      setToggling(null);
-    }
-  };
 
   if (loading) return <LoadingState label="Loading overview…" />;
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;
@@ -268,58 +249,11 @@ export function OverviewPage() {
         <AgentTable rows={metering} />
       </div>
 
-      <div className="grid-2">
-        <div className="panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Needs Attention</h2>
-          </div>
-          <NeedsAttentionPanel items={attention} />
+      <div className="panel">
+        <div className="panel-header">
+          <h2 className="panel-title">Needs Attention</h2>
         </div>
-        <div className="panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Integration Health</h2>
-            <button type="button" className="btn" onClick={() => navigate('/integrations')}>
-              Open integrations
-            </button>
-          </div>
-          {health.length === 0 ? (
-            <EmptyState title="Integration Required" message="Connect a platform to monitor integration health." compact />
-          ) : (
-            <div className="section-tile-grid compact">
-              {health.map((h) => (
-                <div key={h.id} className="section-tile interactive" style={{ cursor: 'default' }}>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/integrations')}
-                    style={{
-                      all: 'unset',
-                      cursor: 'pointer',
-                      display: 'block',
-                      width: '100%',
-                    }}
-                  >
-                    <div className="section-tile-title">{h.name}</div>
-                    <div className="section-tile-meta" style={{ marginTop: 6 }}>
-                      <span className={`badge ${statusTone(h.status)}`}>{h.status.replace(/_/g, ' ')}</span>
-                      <span>last {formatRelative(h.last_telemetry_at)}</span>
-                    </div>
-                  </button>
-                  <div
-                    style={{ marginTop: 8 }}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                  >
-                    <IntegrationSwitch
-                      enabled={h.enabled}
-                      disabled={toggling === h.id || (h.configured === false && !h.enabled)}
-                      onChange={(on) => void toggleHealth(h, on)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <NeedsAttentionPanel items={attention} />
       </div>
 
       <div className="grid-3">
