@@ -390,22 +390,35 @@ export function OverviewPage() {
           ) : (
             <div className="section-tile-grid compact">
               {health.map((h) => (
-                <SectionTile
-                  key={h.id}
-                  title={h.name}
-                  meta={
-                    <>
+                <div key={h.id} className="section-tile interactive" style={{ cursor: 'default' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/integrations')}
+                    style={{
+                      all: 'unset',
+                      cursor: 'pointer',
+                      display: 'block',
+                      width: '100%',
+                    }}
+                  >
+                    <div className="section-tile-title">{h.name}</div>
+                    <div className="section-tile-meta" style={{ marginTop: 6 }}>
                       <span className={`badge ${statusTone(h.status)}`}>{h.status.replace(/_/g, ' ')}</span>
                       <span>last {formatRelative(h.last_telemetry_at)}</span>
-                      <IntegrationSwitch
-                        enabled={h.enabled}
-                        disabled={toggling === h.id || (h.configured === false && !h.enabled)}
-                        onChange={(on) => void toggleHealth(h, on)}
-                      />
-                    </>
-                  }
-                  onClick={() => navigate('/integrations')}
-                />
+                    </div>
+                  </button>
+                  <div
+                    style={{ marginTop: 8 }}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <IntegrationSwitch
+                      enabled={h.enabled}
+                      disabled={toggling === h.id || (h.configured === false && !h.enabled)}
+                      onChange={(on) => void toggleHealth(h, on)}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           )}
