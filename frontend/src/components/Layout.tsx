@@ -80,7 +80,7 @@ export function Layout({
             <div className="sidebar-brand-row">
               <BrandLogo size={40} />
               <div className="sidebar-brand-text">
-                <div className="sidebar-brand-mark">Control Center</div>
+                <div className="sidebar-brand-mark">Sigma Orion</div>
                 <div className="sidebar-brand-title">Agent Metering &amp; Observability</div>
               </div>
             </div>

@@ -3,7 +3,7 @@ interface BrandLogoProps {
   className?: string;
 }
 
-/** Red Sigma (Σ) in a circle — brand mark for the Control Center. */
+/** Reversed Sigma mark — white Σ on a solid red circle. */
 export function BrandLogo({ size = 36, className = '' }: BrandLogoProps) {
   return (
     <svg
@@ -13,13 +13,13 @@ export function BrandLogo({ size = 36, className = '' }: BrandLogoProps) {
       height={size}
       className={`brand-logo ${className}`.trim()}
       role="img"
-      aria-label="Sigma logo"
+      aria-label="Sigma Orion"
     >
-      <circle cx="32" cy="32" r="28" fill="none" stroke="#E31C23" strokeWidth="4" />
+      <circle cx="32" cy="32" r="30" fill="#E31C23" />
       <path
         d="M18 18h28l-18 14 18 14H18"
         fill="none"
-        stroke="#E31C23"
+        stroke="#FFFFFF"
         strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
