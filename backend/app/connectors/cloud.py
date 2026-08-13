@@ -59,7 +59,17 @@ class AzureConnector(BaseConnector):
         return await list_resource_groups_in_subscription(config)
 
     async def fetch_telemetry(self, config: dict[str, Any]) -> list[dict[str, Any]]:
-        return []
+        from app.services.azure_telemetry import AzureTelemetryError, fetch_telemetry as pull_azure_telemetry
+
+        try:
+            return await pull_azure_telemetry(config)
+        except AzureTelemetryError as exc:
+            import logging
+
+            logging.getLogger("control_center.azure").warning(
+                "Azure telemetry pull failed: %s", exc.message
+            )
+            return []
 
 
 class AWSConnector(BaseConnector):

@@ -60,6 +60,10 @@ class Settings(BaseSettings):
         "http://localhost:8000/api/v1/telemetry/otlp?integration_id=otel"
     )
 
+    # Pull Foundry / App Insights telemetry when Azure is enabled
+    azure_telemetry_poll_enabled: bool = True
+    telemetry_poll_interval_seconds: int = 30
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

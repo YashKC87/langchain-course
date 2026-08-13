@@ -13,6 +13,7 @@ from app.services.integrations import integration_service
 from app.services.metrics import metrics_service
 from app.services.optimization import optimization_service
 from app.services.telemetry import telemetry_service
+from app.services.telemetry_sync import telemetry_sync_service
 from app.services.workflow import build_waterfall, build_workflow
 from app.storage.store import store, is_live_execution
 
@@ -176,6 +177,24 @@ async def discover_integration_agents(
         )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
+
+
+@router.post("/integrations/{integration_id}/sync-telemetry")
+async def sync_integration_telemetry(
+    integration_id: str,
+    _: dict = Depends(require_permission("integrations:write")),
+):
+    """Pull recent telemetry from the connected platform (Azure Application Insights)."""
+    if integration_id != "azure":
+        return {
+            "ok": True,
+            "message": "Telemetry sync is only implemented for Azure Application Insights pull.",
+            "spans_ingested": 0,
+        }
+    integ = integration_service.get(integration_id)
+    if not integ or not integ.enabled:
+        raise HTTPException(400, "Enable the Azure integration before syncing telemetry.")
+    return await telemetry_sync_service.sync_azure()
 
 
 # ── Agents ──────────────────────────────────────────────────────────────

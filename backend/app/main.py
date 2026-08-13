@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.core.config import get_settings
 from app.services.integrations import integration_service
+from app.services.telemetry_sync import telemetry_sync_service
 from app.storage.persistence import apply_env_defaults, apply_saved_config, auto_enable_integrations
 from app.storage.store import store
 
@@ -45,7 +46,9 @@ async def lifespan(app: FastAPI):
     configured = [i.name for i in store.integrations.values() if i.configured]
     if configured:
         logger.info("Loaded integration config: %s", ", ".join(configured[:8]))
+    await telemetry_sync_service.start()
     yield
+    await telemetry_sync_service.stop()
     logger.info("Shutting down Control Center")
 
 
