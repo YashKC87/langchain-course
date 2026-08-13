@@ -1,16 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Activity,
-  Boxes,
-  BrainCircuit,
-  Cable,
   Cloud,
-  GitBranch,
-  Network,
   Radio,
-  Sparkles,
-  Wrench,
 } from 'lucide-react';
 import { api, formatApiError } from '../api/client';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
@@ -195,79 +187,6 @@ export function OverviewPage() {
     );
   }
 
-  const sectionTiles = [
-    {
-      title: 'Agents',
-      description: 'Metering and health across discovered agents',
-      icon: Boxes,
-      value: formatNumber(metering.length || null),
-      path: '/agents',
-    },
-    {
-      title: 'Live Executions',
-      description: 'Running and recent agent executions',
-      icon: Radio,
-      value: formatNumber(kpis?.executions?.value ?? null),
-      path: '/live-executions',
-      tone: runningExecution ? ('running' as const) : ('default' as const),
-    },
-    {
-      title: 'Workflow',
-      description: 'Graphical path for the active agent run',
-      icon: GitBranch,
-      value: runningExecution ? 'Live' : 'Idle',
-      path: '/workflow',
-      tone: runningExecution ? ('running' as const) : ('default' as const),
-    },
-    {
-      title: 'Models',
-      description: 'Token and latency by model',
-      icon: BrainCircuit,
-      value: formatNumber(models.length || null),
-      path: '/models',
-    },
-    {
-      title: 'Tools & MCP',
-      description: 'Tool and MCP invocation telemetry',
-      icon: Wrench,
-      value: formatNumber((tools.length || 0) + (mcp.length || 0) || null),
-      path: '/tools-mcp',
-    },
-    {
-      title: 'RAG',
-      description: 'Retrieval and knowledge-source activity',
-      icon: Network,
-      value: formatNumber(rag.length || null),
-      path: '/rag',
-    },
-    {
-      title: 'Multi-Agent / A2A',
-      description: 'Agent-to-agent handoffs',
-      icon: Cable,
-      path: '/a2a',
-    },
-    {
-      title: 'Integrations',
-      description: 'Cloud and observability connections',
-      icon: Cable,
-      value: formatNumber(health.filter((h) => h.enabled).length || null),
-      path: '/integrations',
-    },
-    {
-      title: 'Observability',
-      description: 'Traces, freshness, and signal quality',
-      icon: Activity,
-      path: '/observability',
-    },
-    {
-      title: 'Optimization',
-      description: 'Recommendations from live evidence',
-      icon: Sparkles,
-      value: formatNumber(optimization.length || null),
-      path: '/optimization',
-    },
-  ];
-
   return (
     <div className="stack">
       <div className="grid-kpi">
@@ -277,28 +196,6 @@ export function OverviewPage() {
         <MetricCard label="Success Rate" metric={kpis?.success_rate} format="percent" onClick={() => navigate('/agents')} />
         <MetricCard label="Avg Latency" metric={kpis?.average_latency} format="duration" onClick={() => navigate('/live-executions')} />
         <MetricCard label="Needs Attention" metric={kpis?.needs_attention} onClick={() => navigate('/optimization')} />
-      </div>
-
-      <div className="panel">
-        <div className="panel-header">
-          <div>
-            <h2 className="panel-title">Sections</h2>
-            <p className="panel-subtitle">Select a tile to open its information window</p>
-          </div>
-        </div>
-        <div className="section-tile-grid">
-          {sectionTiles.map((tile) => (
-            <SectionTile
-              key={tile.path}
-              title={tile.title}
-              description={tile.description}
-              icon={tile.icon}
-              value={tile.value}
-              tone={tile.tone}
-              onClick={() => navigate(tile.path)}
-            />
-          ))}
-        </div>
       </div>
 
       <div className="panel">
