@@ -3,7 +3,7 @@ interface BrandLogoProps {
   className?: string;
 }
 
-/** Red Σ outline in a red circle on white — Sigma Orion brand mark. */
+/** Reference-faithful Sigma Orion mark (vector SVG). */
 export function BrandLogo({ size = 40, className = '' }: BrandLogoProps) {
   return (
     <img
