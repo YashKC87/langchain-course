@@ -10,6 +10,7 @@ interface MetricCardProps {
   unit?: string;
   subtitle?: string;
   displayValue?: string | null;
+  onClick?: () => void;
 }
 
 export function MetricCard({
@@ -21,6 +22,7 @@ export function MetricCard({
   unit,
   subtitle,
   displayValue,
+  onClick,
 }: MetricCardProps) {
   const isAvailable = displayValue != null && displayValue !== ''
     ? true
@@ -45,11 +47,18 @@ export function MetricCard({
       ? metric?.label || subtitle || 'No live data'
       : subtitle ?? metric?.unit ?? null;
 
+  const interactive = typeof onClick === 'function';
+  const Tag = interactive ? 'button' : 'div';
+
   return (
-    <div className="metric-card">
+    <Tag
+      type={interactive ? 'button' : undefined}
+      className={`metric-card${interactive ? ' interactive' : ''}`}
+      onClick={onClick}
+    >
       <div className="metric-label">{label}</div>
       <div className={`metric-value${isAvailable ? '' : ' unavailable'}`}>{display}</div>
       {sub ? <div className="metric-sub">{sub}</div> : null}
-    </div>
+    </Tag>
   );
 }

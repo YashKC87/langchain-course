@@ -45,10 +45,11 @@ export function WorkflowPage() {
       } else {
         setEmptyList(null);
         setExecutions(res.items);
+        const running = res.items.find((e) => e.status === 'running');
         const id =
-          selected && res.items.some((e) => e.execution_id === selected)
+          selected && res.items.some((e) => e.execution_id === selected && e.status === 'running')
             ? selected
-            : res.items[0].execution_id;
+            : running?.execution_id ?? '';
         setSelected(id);
         await loadGraph(id);
       }
@@ -71,7 +72,7 @@ export function WorkflowPage() {
           <div>
             <h2 className="panel-title">Execution Workflow</h2>
             <p className="panel-subtitle">
-              Select an execution to inspect the live graphical path and waterfall
+              Live graphical path for the currently running agent only
             </p>
           </div>
           {executions.length > 0 ? (
@@ -84,22 +85,31 @@ export function WorkflowPage() {
               }}
               style={{ minWidth: 280 }}
             >
-              {executions.map((e) => (
-                <option key={e.execution_id} value={e.execution_id}>
-                  {displayOrDash(e.agent_name)} · {e.execution_id.slice(0, 12)} · {e.status} ·{' '}
-                  {formatTimestamp(e.start_time ?? e.timestamp)}
-                </option>
-              ))}
+              <option value="">Select a running execution</option>
+              {executions
+                .filter((e) => e.status === 'running')
+                .map((e) => (
+                  <option key={e.execution_id} value={e.execution_id}>
+                    {displayOrDash(e.agent_name)} · {e.execution_id.slice(0, 12)} · running ·{' '}
+                    {formatTimestamp(e.start_time ?? e.timestamp)}
+                  </option>
+                ))}
             </select>
           ) : null}
         </div>
         {emptyList ? (
           <EmptyState title={emptyList.title} message={emptyList.message} />
-        ) : (
+        ) : selected ? (
           <WorkflowGraph graph={graph} height={460} />
+        ) : (
+          <EmptyState
+            title="No agent currently running"
+            message="Workflow showcase shows only the agent execution that is in progress."
+            compact
+          />
         )}
       </div>
-      {!emptyList ? (
+      {!emptyList && selected ? (
         <div className="panel">
           <div className="panel-header">
             <h2 className="panel-title">Execution Waterfall</h2>

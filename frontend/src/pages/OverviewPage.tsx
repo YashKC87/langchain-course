@@ -1,6 +1,17 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cloud, Radio } from 'lucide-react';
+import {
+  Activity,
+  Boxes,
+  BrainCircuit,
+  Cable,
+  Cloud,
+  GitBranch,
+  Network,
+  Radio,
+  Sparkles,
+  Wrench,
+} from 'lucide-react';
 import { api, formatApiError } from '../api/client';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import type {
@@ -26,8 +37,19 @@ import { LoadingState } from '../components/LoadingState';
 import { MetricCard } from '../components/MetricCard';
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel';
 import { OptimizationPanel } from '../components/OptimizationPanel';
+import { SectionTile } from '../components/SectionTile';
 import { WorkflowGraph } from '../components/WorkflowGraph';
 import { displayOrDash, formatNumber, formatRelative, statusTone } from '../utils/format';
+
+function pickRunningExecution(items: Execution[]): Execution | null {
+  const running = items.filter((e) => e.status === 'running');
+  if (!running.length) return null;
+  return [...running].sort((a, b) => {
+    const at = a.start_time ?? a.timestamp ?? '';
+    const bt = b.start_time ?? b.timestamp ?? '';
+    return String(bt).localeCompare(String(at));
+  })[0];
+}
 
 export function OverviewPage() {
   const navigate = useNavigate();
@@ -45,7 +67,7 @@ export function OverviewPage() {
   const [rag, setRag] = useState<RAGSummary[]>([]);
   const [optimization, setOptimization] = useState<OptimizationFinding[]>([]);
   const [workflow, setWorkflow] = useState<WFGraph | null>(null);
-  const [liveExecution, setLiveExecution] = useState<Execution | null>(null);
+  const [runningExecution, setRunningExecution] = useState<Execution | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -95,28 +117,17 @@ export function OverviewPage() {
       setRag(!ragRes.empty ? ragRes.items : []);
       setOptimization(!optRes.empty ? optRes.items : []);
 
-      const live = !execRes.empty && execRes.items.length ? execRes.items[0] : null;
-      setLiveExecution(live);
-      if (live) {
+      const liveItems = !execRes.empty ? execRes.items : [];
+      const running = pickRunningExecution(liveItems);
+      setRunningExecution(running);
+      if (running) {
         try {
-          setWorkflow(await api.getExecutionWorkflow(live.execution_id));
+          setWorkflow(await api.getExecutionWorkflow(running.execution_id));
         } catch {
           setWorkflow(null);
         }
       } else {
-        // Fall back to most recent execution for workflow centerpiece
-        const all = await api.getExecutions();
-        if (!all.empty && all.items.length) {
-          const first = all.items[0];
-          setLiveExecution(first);
-          try {
-            setWorkflow(await api.getExecutionWorkflow(first.execution_id));
-          } catch {
-            setWorkflow(null);
-          }
-        } else {
-          setWorkflow(null);
-        }
+        setWorkflow(null);
       }
     } catch (err) {
       setError(formatApiError(err));
@@ -184,15 +195,110 @@ export function OverviewPage() {
     );
   }
 
+  const sectionTiles = [
+    {
+      title: 'Agents',
+      description: 'Metering and health across discovered agents',
+      icon: Boxes,
+      value: formatNumber(metering.length || null),
+      path: '/agents',
+    },
+    {
+      title: 'Live Executions',
+      description: 'Running and recent agent executions',
+      icon: Radio,
+      value: formatNumber(kpis?.executions?.value ?? null),
+      path: '/live-executions',
+      tone: runningExecution ? ('running' as const) : ('default' as const),
+    },
+    {
+      title: 'Workflow',
+      description: 'Graphical path for the active agent run',
+      icon: GitBranch,
+      value: runningExecution ? 'Live' : 'Idle',
+      path: '/workflow',
+      tone: runningExecution ? ('running' as const) : ('default' as const),
+    },
+    {
+      title: 'Models',
+      description: 'Token and latency by model',
+      icon: BrainCircuit,
+      value: formatNumber(models.length || null),
+      path: '/models',
+    },
+    {
+      title: 'Tools & MCP',
+      description: 'Tool and MCP invocation telemetry',
+      icon: Wrench,
+      value: formatNumber((tools.length || 0) + (mcp.length || 0) || null),
+      path: '/tools-mcp',
+    },
+    {
+      title: 'RAG',
+      description: 'Retrieval and knowledge-source activity',
+      icon: Network,
+      value: formatNumber(rag.length || null),
+      path: '/rag',
+    },
+    {
+      title: 'Multi-Agent / A2A',
+      description: 'Agent-to-agent handoffs',
+      icon: Cable,
+      path: '/a2a',
+    },
+    {
+      title: 'Integrations',
+      description: 'Cloud and observability connections',
+      icon: Cable,
+      value: formatNumber(health.filter((h) => h.enabled).length || null),
+      path: '/integrations',
+    },
+    {
+      title: 'Observability',
+      description: 'Traces, freshness, and signal quality',
+      icon: Activity,
+      path: '/observability',
+    },
+    {
+      title: 'Optimization',
+      description: 'Recommendations from live evidence',
+      icon: Sparkles,
+      value: formatNumber(optimization.length || null),
+      path: '/optimization',
+    },
+  ];
+
   return (
     <div className="stack">
       <div className="grid-kpi">
-        <MetricCard label="Active Agents" metric={kpis?.active_agents} />
-        <MetricCard label="Executions" metric={kpis?.executions} />
-        <MetricCard label="Total Tokens" metric={kpis?.total_tokens} />
-        <MetricCard label="Success Rate" metric={kpis?.success_rate} format="percent" />
-        <MetricCard label="Avg Latency" metric={kpis?.average_latency} format="duration" />
-        <MetricCard label="Needs Attention" metric={kpis?.needs_attention} />
+        <MetricCard label="Active Agents" metric={kpis?.active_agents} onClick={() => navigate('/agents')} />
+        <MetricCard label="Executions" metric={kpis?.executions} onClick={() => navigate('/live-executions')} />
+        <MetricCard label="Total Tokens" metric={kpis?.total_tokens} onClick={() => navigate('/models')} />
+        <MetricCard label="Success Rate" metric={kpis?.success_rate} format="percent" onClick={() => navigate('/agents')} />
+        <MetricCard label="Avg Latency" metric={kpis?.average_latency} format="duration" onClick={() => navigate('/live-executions')} />
+        <MetricCard label="Needs Attention" metric={kpis?.needs_attention} onClick={() => navigate('/optimization')} />
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <div>
+            <h2 className="panel-title">Sections</h2>
+            <p className="panel-subtitle">Select a tile to open its information window</p>
+          </div>
+        </div>
+        <div className="section-tile-grid">
+          {sectionTiles.map((tile) => (
+            <SectionTile
+              key={tile.path}
+              title={tile.title}
+              description={tile.description}
+              icon={tile.icon}
+              value={tile.value}
+              tone={tile.tone}
+              onClick={() => navigate(tile.path)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="panel">
@@ -200,13 +306,26 @@ export function OverviewPage() {
           <div>
             <h2 className="panel-title">Live Agent Workflow</h2>
             <p className="panel-subtitle">
-              {liveExecution
-                ? `${liveExecution.agent_name ?? 'Agent'} · ${liveExecution.execution_id.slice(0, 12)}… · ${liveExecution.status}`
-                : 'Graphical execution path from live telemetry'}
+              {runningExecution
+                ? `${runningExecution.agent_name ?? 'Agent'} · ${runningExecution.execution_id.slice(0, 12)}… · running`
+                : 'Shows only the agent execution that is currently running'}
             </p>
           </div>
+          {runningExecution ? (
+            <button type="button" className="btn" onClick={() => navigate('/live-executions')}>
+              Open live view
+            </button>
+          ) : null}
         </div>
-        <WorkflowGraph graph={workflow} height={440} />
+        {runningExecution && workflow ? (
+          <WorkflowGraph graph={workflow} highlightRunning height={440} />
+        ) : (
+          <EmptyState
+            title="No agent currently running"
+            message="The live workflow appears here only while an agent execution is in progress."
+            compact
+          />
+        )}
       </div>
 
       <div className="grid-2">
@@ -219,33 +338,24 @@ export function OverviewPage() {
         <div className="panel">
           <div className="panel-header">
             <h2 className="panel-title">Model / Token Activity</h2>
+            <button type="button" className="btn" onClick={() => navigate('/models')}>
+              Open models
+            </button>
           </div>
           {models.length === 0 ? (
             <EmptyState title="No model activity" message="Model metrics appear when live token telemetry arrives." compact />
           ) : (
-            <div className="data-table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Model</th>
-                    <th>Provider</th>
-                    <th>Requests</th>
-                    <th>Tokens</th>
-                    <th>Latency</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {models.slice(0, 8).map((m) => (
-                    <tr key={m.model}>
-                      <td className="mono">{m.model}</td>
-                      <td>{displayOrDash(m.provider)}</td>
-                      <td className="mono">{formatNumber(m.requests)}</td>
-                      <td className="mono">{formatNumber(m.tokens)}</td>
-                      <td className="mono">{m.average_latency_ms == null ? '—' : `${Math.round(m.average_latency_ms)}ms`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="section-tile-grid">
+              {models.slice(0, 6).map((m) => (
+                <SectionTile
+                  key={m.model}
+                  title={m.model}
+                  description={displayOrDash(m.provider)}
+                  value={formatNumber(m.tokens)}
+                  meta={`${formatNumber(m.requests)} requests`}
+                  onClick={() => navigate('/models')}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -254,6 +364,9 @@ export function OverviewPage() {
       <div className="panel">
         <div className="panel-header">
           <h2 className="panel-title">Agent Metering</h2>
+          <button type="button" className="btn" onClick={() => navigate('/agents')}>
+            Open agents
+          </button>
         </div>
         <AgentTable rows={metering} />
       </div>
@@ -268,38 +381,31 @@ export function OverviewPage() {
         <div className="panel">
           <div className="panel-header">
             <h2 className="panel-title">Integration Health</h2>
+            <button type="button" className="btn" onClick={() => navigate('/integrations')}>
+              Open integrations
+            </button>
           </div>
           {health.length === 0 ? (
             <EmptyState title="Integration Required" message="Connect a platform to monitor integration health." compact />
           ) : (
-            <div className="stack" style={{ gap: 8 }}>
+            <div className="section-tile-grid compact">
               {health.map((h) => (
-                <div
+                <SectionTile
                   key={h.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    padding: '8px 0',
-                    borderBottom: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 550 }}>{h.name}</div>
-                    <div className="muted" style={{ fontSize: 11 }}>
+                  title={h.name}
+                  meta={
+                    <>
                       <span className={`badge ${statusTone(h.status)}`}>{h.status.replace(/_/g, ' ')}</span>
-                      {' · '}
-                      last {formatRelative(h.last_telemetry_at)}
-                      {!h.enabled && h.configured ? ' · Historical telemetry retained' : ''}
-                    </div>
-                  </div>
-                  <IntegrationSwitch
-                    enabled={h.enabled}
-                    disabled={toggling === h.id || (h.configured === false && !h.enabled)}
-                    onChange={(on) => void toggleHealth(h, on)}
-                  />
-                </div>
+                      <span>last {formatRelative(h.last_telemetry_at)}</span>
+                      <IntegrationSwitch
+                        enabled={h.enabled}
+                        disabled={toggling === h.id || (h.configured === false && !h.enabled)}
+                        onChange={(on) => void toggleHealth(h, on)}
+                      />
+                    </>
+                  }
+                  onClick={() => navigate('/integrations')}
+                />
               ))}
             </div>
           )}
@@ -314,13 +420,17 @@ export function OverviewPage() {
           {tools.length === 0 ? (
             <EmptyState title="No tool telemetry" message="Tool calls appear when spans include tool invocations." compact />
           ) : (
-            <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--text-secondary)' }}>
+            <div className="section-tile-grid compact">
               {tools.slice(0, 6).map((t) => (
-                <li key={`${t.name}-${t.agent_id}`}>
-                  {t.name} · {formatNumber(t.calls)} calls
-                </li>
+                <SectionTile
+                  key={`${t.name}-${t.agent_id}`}
+                  title={t.name}
+                  value={formatNumber(t.calls)}
+                  meta="calls"
+                  onClick={() => navigate('/tools-mcp')}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </div>
         <div className="panel">
@@ -330,14 +440,17 @@ export function OverviewPage() {
           {mcp.length === 0 ? (
             <EmptyState title="No MCP telemetry" message="MCP server activity requires live MCP spans." compact />
           ) : (
-            <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--text-secondary)' }}>
+            <div className="section-tile-grid compact">
               {mcp.slice(0, 6).map((m) => (
-                <li key={`${m.server}-${m.tool}`}>
-                  {m.server}
-                  {m.tool ? ` / ${m.tool}` : ''} · {formatNumber(m.calls)}
-                </li>
+                <SectionTile
+                  key={`${m.server}-${m.tool}`}
+                  title={m.server}
+                  description={m.tool ?? undefined}
+                  value={formatNumber(m.calls)}
+                  onClick={() => navigate('/tools-mcp')}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </div>
         <div className="panel">
@@ -347,13 +460,17 @@ export function OverviewPage() {
           {rag.length === 0 ? (
             <EmptyState title="No RAG telemetry" message="Retrieval metrics appear when RAG queries are traced." compact />
           ) : (
-            <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--text-secondary)' }}>
+            <div className="section-tile-grid compact">
               {rag.slice(0, 6).map((r) => (
-                <li key={`${r.knowledge_source}-${r.agent_id}`}>
-                  {r.knowledge_source} · {formatNumber(r.queries)} queries
-                </li>
+                <SectionTile
+                  key={`${r.knowledge_source}-${r.agent_id}`}
+                  title={r.knowledge_source}
+                  value={formatNumber(r.queries)}
+                  meta="queries"
+                  onClick={() => navigate('/rag')}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
@@ -361,6 +478,9 @@ export function OverviewPage() {
       <div className="panel">
         <div className="panel-header">
           <h2 className="panel-title">Optimization</h2>
+          <button type="button" className="btn" onClick={() => navigate('/optimization')}>
+            Open optimization
+          </button>
         </div>
         <OptimizationPanel items={optimization} />
       </div>
