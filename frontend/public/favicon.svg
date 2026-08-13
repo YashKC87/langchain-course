@@ -1,4 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" role="img" aria-label="Sigma Orion">
+  <!-- Matching circle + Sigma stroke weight; rounded bar ends; angular middle peak -->
   <circle cx="128" cy="128" r="108" stroke="#E31C23" stroke-width="14"/>
-  <path d="M78 74 H178 L98 128 L178 182 H78" stroke="#E31C23" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path
+    d="M72 70 H184 L86 128 L184 186 H72"
+    stroke="#E31C23"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="miter"
+    stroke-miterlimit="8"
+  />
 </svg>
