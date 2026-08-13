@@ -52,6 +52,13 @@ def build_workflow(execution_id: str, spans: list[NormalizedSpan], status: Execu
             status=status or ExecutionStatus.UNKNOWN,
         )
 
+    # Deduplicate by span_id — re-ingest polls can append the same span many times.
+    unique: dict[str, NormalizedSpan] = {}
+    for s in spans:
+        if s.span_id:
+            unique[s.span_id] = s
+    spans = list(unique.values())
+
     nodes: list[WorkflowNode] = []
     edges: list[WorkflowEdge] = []
     by_id = {s.span_id: s for s in spans}
@@ -158,7 +165,11 @@ def build_workflow(execution_id: str, spans: list[NormalizedSpan], status: Execu
 
 def build_waterfall(spans: list[NormalizedSpan]) -> list[dict]:
     """Alternative waterfall view — ordered by start time, no fabricated spans."""
-    ordered = sorted(spans, key=lambda s: (s.start_time is None, s.start_time or 0))
+    unique: dict[str, NormalizedSpan] = {}
+    for s in spans:
+        if s.span_id:
+            unique[s.span_id] = s
+    ordered = sorted(unique.values(), key=lambda s: (s.start_time is None, s.start_time or 0))
     rows = []
     origin = next((s.start_time for s in ordered if s.start_time), None)
     for s in ordered:

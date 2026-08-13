@@ -74,7 +74,10 @@ export function LiveExecutionsPage() {
                       cursor: 'pointer',
                       background: selected === e.execution_id ? 'var(--bg-hover)' : undefined,
                     }}
-                    onClick={() => setSelected(e.execution_id)}
+                      onClick={() => {
+                        setSelected(e.execution_id);
+                        void api.getExecutionWorkflow(e.execution_id).then(setGraph).catch(() => undefined);
+                      }}
                   >
                     <td className="mono">{e.execution_id.slice(0, 14)}</td>
                     <td>{displayOrDash(e.agent_name)}</td>

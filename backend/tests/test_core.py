@@ -426,6 +426,45 @@ async def test_runaway_detection_creates_attention(client):
 
 
 @pytest.mark.asyncio
+async def test_reingest_does_not_duplicate_workflow_nodes(client):
+    await client.put(
+        "/api/v1/integrations/otel/config",
+        json={"fields": {"collector_endpoint": "http://localhost:4318", "protocol": "http/protobuf"}},
+    )
+    await client.post("/api/v1/integrations/otel/toggle", json={"enabled": True})
+    payload = {
+        "spans": [
+            {
+                "name": "agent.run",
+                "span_id": "dup-root",
+                "trace_id": "dup-trace",
+                "status": "ok",
+                "start_time": "2026-04-11T12:00:00+00:00",
+                "end_time": "2026-04-11T12:00:02+00:00",
+                "attributes": {"agent.id": "dup-agent", "agent.name": "Dup Agent", "gen_ai.response.id": "exec-dup"},
+            },
+            {
+                "name": "chat",
+                "span_id": "dup-child",
+                "trace_id": "dup-trace",
+                "parent_span_id": "dup-root",
+                "status": "ok",
+                "start_time": "2026-04-11T12:00:00+00:00",
+                "end_time": "2026-04-11T12:00:01+00:00",
+                "attributes": {"agent.id": "dup-agent", "gen_ai.response.id": "exec-dup", "prompt_tokens": 10, "completion_tokens": 4},
+            },
+        ]
+    }
+    await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
+    await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
+    await client.post("/api/v1/telemetry/spans?integration_id=otel", json=payload)
+    wf = (await client.get("/api/v1/executions/exec-dup/workflow")).json()
+    assert len(wf["nodes"]) == 2
+    assert len({n["id"] for n in wf["nodes"]}) == 2
+    assert len(wf["edges"]) == 1
+
+
+@pytest.mark.asyncio
 async def test_waiting_for_telemetry_state(client):
     await client.put(
         "/api/v1/integrations/otel/config",

@@ -947,6 +947,8 @@ code,
 
 .workflow-canvas {
   height: 420px;
+  width: 100%;
+  min-width: 0;
   border-radius: var(--radius);
   border: 1px solid var(--border-subtle);
   background:
@@ -962,13 +964,32 @@ code,
   height: 100%;
 }
 
+.workflow-canvas .react-flow__viewport {
+  transform-origin: 0 0;
+}
+
+.workflow-canvas .react-flow__node {
+  width: auto !important;
+  max-width: none;
+}
+
+.workflow-canvas .react-flow__node-workflow {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 220px;
+}
+
 .workflow-canvas .state-box {
   min-height: 100%;
 }
 
 .workflow-node {
-  min-width: 160px;
+  width: 220px;
+  min-width: 220px;
   max-width: 220px;
+  box-sizing: border-box;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);

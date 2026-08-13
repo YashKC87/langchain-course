@@ -66,9 +66,12 @@ class TelemetryIngestionService:
 
         for span in normalized:
             store.spans[span.span_id] = span
-            store.spans_by_trace.setdefault(span.trace_id, []).append(span.span_id)
+            if span.span_id not in store.spans_by_trace.setdefault(span.trace_id, []):
+                store.spans_by_trace[span.trace_id].append(span.span_id)
             if span.execution_id:
-                store.spans_by_execution.setdefault(span.execution_id, []).append(span.span_id)
+                exec_spans = store.spans_by_execution.setdefault(span.execution_id, [])
+                if span.span_id not in exec_spans:
+                    exec_spans.append(span.span_id)
                 executions_touched.add(span.execution_id)
 
             agent_id = span.attributes.get("canonical.agent.id")
