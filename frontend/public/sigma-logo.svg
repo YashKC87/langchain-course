@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" role="img" aria-label="Sigma Orion">
+  <!-- Exact reference mark: red circle + capital Σ, equal stroke, rounded caps/joins, left-pointing middle V -->
+  <circle
+    cx="128"
+    cy="128"
+    r="104"
+    stroke="#E31C23"
+    stroke-width="12"
+  />
+  <path
+    d="M76 78 H180 L92 128 L180 178 H76"
+    stroke="#E31C23"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
