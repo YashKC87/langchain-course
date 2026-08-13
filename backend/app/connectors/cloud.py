@@ -53,6 +53,11 @@ class AzureConnector(BaseConnector):
 
         return await discover_agents_in_subscription(config)
 
+    async def list_resource_groups(self, config: dict[str, Any]) -> dict[str, Any]:
+        from app.services.azure_discovery import list_resource_groups_in_subscription
+
+        return await list_resource_groups_in_subscription(config)
+
     async def fetch_telemetry(self, config: dict[str, Any]) -> list[dict[str, Any]]:
         return []
 

@@ -90,6 +90,10 @@ class ToggleBody(BaseModel):
     enabled: bool
 
 
+class DiscoverBody(BaseModel):
+    resource_group: str | None = None
+
+
 @router.get("/integrations")
 async def list_integrations(_: dict = Depends(require_permission("integrations:read"))):
     return {"groups": {k: [i.model_dump() for i in v] for k, v in integration_service.list_by_category().items()}}
@@ -142,14 +146,34 @@ async def toggle_integration(
     return integ.model_dump()
 
 
+@router.post("/integrations/{integration_id}/resource-groups")
+async def list_integration_resource_groups(
+    integration_id: str,
+    body: ConfigBody | None = None,
+    _: dict = Depends(require_permission("integrations:read")),
+):
+    """List Azure resource groups in the configured subscription."""
+    try:
+        return await integration_service.list_resource_groups(
+            integration_id,
+            fields_override=body.fields if body else None,
+        )
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
 @router.post("/integrations/{integration_id}/discover")
 async def discover_integration_agents(
     integration_id: str,
+    body: DiscoverBody | None = None,
     _: dict = Depends(require_permission("integrations:write")),
 ):
     """Scan the connected platform for deployed agents (Azure subscription discovery)."""
     try:
-        return await integration_service.discover(integration_id)
+        return await integration_service.discover(
+            integration_id,
+            resource_group=body.resource_group if body else None,
+        )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
 

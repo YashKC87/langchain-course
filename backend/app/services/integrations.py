@@ -420,7 +420,45 @@ class IntegrationService:
             return await self.enable(integration_id)
         return await self.disable(integration_id)
 
-    async def discover(self, integration_id: str) -> dict[str, Any]:
+    async def list_resource_groups(
+        self,
+        integration_id: str,
+        fields_override: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        integ = store.integrations.get(integration_id)
+        if not integ:
+            raise KeyError(f"Unknown integration: {integration_id}")
+        if integ.id != "azure" and integ.provider != "azure":
+            return {
+                "ok": False,
+                "message": "Resource group listing is only available for Azure integrations.",
+                "resource_groups": [],
+            }
+
+        from app.services.azure_discovery import AzureDiscoveryError, list_resource_groups_in_subscription
+
+        cfg = {
+            **integ.config.fields,
+            **(fields_override or {}),
+            "auth_method": integ.config.auth_method,
+        }
+        try:
+            result = await list_resource_groups_in_subscription(cfg)
+            return {"ok": True, **result}
+        except AzureDiscoveryError as exc:
+            return {
+                "ok": False,
+                "stage": exc.stage,
+                "message": exc.message,
+                "resource_groups": [],
+            }
+
+    async def discover(
+        self,
+        integration_id: str,
+        *,
+        resource_group: str | None = None,
+    ) -> dict[str, Any]:
         """Refresh agent discovery for a cloud integration."""
         integ = store.integrations.get(integration_id)
         if not integ:
@@ -461,7 +499,7 @@ class IntegrationService:
 
             connector = AzureConnector()
             discovery_error = AzureDiscoveryError
-            extra_keys = ("subscription_id", "resource_group", "foundry_project")
+            extra_keys = ("subscription_id", "resource_group", "foundry_project", "scope")
         else:
             from app.services.aws_discovery import AWSDiscoveryError
 
@@ -470,6 +508,17 @@ class IntegrationService:
             extra_keys = ("account_id", "region")
 
         cfg = {**integ.config.fields, "auth_method": integ.config.auth_method}
+        if resource_group is not None and (integ.id == "azure" or integ.provider == "azure"):
+            normalized = str(resource_group).strip()
+            if not normalized or normalized.lower() in ("__all__", "all", "*"):
+                cfg.pop("resource_group", None)
+                integ.config.fields.pop("resource_group", None)
+            else:
+                cfg["resource_group"] = normalized
+                integ.config.fields["resource_group"] = normalized
+            store.integrations[integration_id] = integ
+            save_integration_overrides(store.integrations)
+
         try:
             detail = await connector.discover_detailed(cfg)
         except discovery_error as exc:

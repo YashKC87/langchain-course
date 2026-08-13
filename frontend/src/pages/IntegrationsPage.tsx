@@ -83,19 +83,26 @@ export function IntegrationsPage() {
     }
   };
 
-  const onDiscover = async (integration: Integration) => {
+  const onDiscover = async (integration: Integration, resourceGroup?: string) => {
     setDiscovering(integration.id);
     setProgressNote(null);
     try {
-      const result = await api.discoverIntegration(integration.id);
+      const result = await api.discoverIntegration(
+        integration.id,
+        isAzureIntegration(integration)
+          ? { resource_group: resourceGroup ?? null }
+          : undefined,
+      );
       const count = result.counts?.total ?? result.agents?.length ?? 0;
       if (result.ok) {
         const scope =
-          result.subscription_id != null
-            ? `subscription ${result.subscription_id}`
-            : result.account_id != null
-              ? `account ${result.account_id}`
-              : '';
+          result.resource_group != null
+            ? `resource group ${result.resource_group}`
+            : result.subscription_id != null
+              ? `subscription ${result.subscription_id}`
+              : result.account_id != null
+                ? `account ${result.account_id}`
+                : '';
         setProgressNote(
           result.message ||
             (count
@@ -112,6 +119,10 @@ export function IntegrationsPage() {
       setDiscovering(null);
     }
   };
+
+  function isAzureIntegration(integration: Integration) {
+    return integration.id === 'azure' || integration.provider === 'azure';
+  }
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;
@@ -142,7 +153,7 @@ export function IntegrationsPage() {
                 discovering={discovering === integ.id}
                 onConfigure={() => setConfigure(integ)}
                 onToggle={(on) => void onToggle(integ, on)}
-                onDiscover={() => void onDiscover(integ)}
+                onDiscover={(resourceGroup) => void onDiscover(integ, resourceGroup)}
               />
             ))}
           </div>

@@ -160,7 +160,10 @@ export const api = {
       body: JSON.stringify({ enabled }),
     }),
 
-  discoverIntegration: (id: string) =>
+  discoverIntegration: (
+    id: string,
+    body?: { resource_group?: string | null },
+  ) =>
     request<{
       ok: boolean;
       message?: string;
@@ -172,7 +175,34 @@ export const api = {
       subscription_id?: string;
       resource_group?: string;
       foundry_project?: string;
-    }>(`/integrations/${id}/discover`, { method: 'POST' }),
+      scope?: string;
+      account_id?: string;
+      region?: string;
+    }>(`/integrations/${id}/discover`, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  listAzureResourceGroups: (
+    id: string,
+    fields?: Record<string, unknown>,
+  ) =>
+    request<{
+      ok: boolean;
+      message?: string;
+      stage?: string;
+      subscription_id?: string;
+      count?: number;
+      resource_groups?: Array<{
+        name: string;
+        location?: string;
+        id?: string;
+        provisioning_state?: string;
+      }>;
+    }>(`/integrations/${id}/resource-groups`, {
+      method: 'POST',
+      body: fields ? JSON.stringify({ fields }) : undefined,
+    }),
 
   getAgents: () => request<ListResponse<Agent> | EmptyStateResponse>('/agents'),
 

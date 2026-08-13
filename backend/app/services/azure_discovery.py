@@ -22,6 +22,7 @@ logger = logging.getLogger("control_center.azure_discovery")
 ARM = "https://management.azure.com"
 AI_AUDIENCE = "https://ai.azure.com"
 ARM_API = "2021-04-01"
+RG_API = "2021-04-01"
 COG_API = "2023-05-01"
 FOUNDRY_API = "v1"
 OPENAI_ASSISTANTS_API = "2024-05-01-preview"
@@ -154,29 +155,119 @@ async def _arm_get(path: str, arm_token: str, api_version: str) -> dict[str, Any
         return res.json()
 
 
+def _discovery_scope_rg(config: dict[str, Any]) -> str | None:
+    """Return a resource group name when discovery should be RG-scoped, else None (full subscription)."""
+    rg = config.get("resource_group") or os.environ.get("AZURE_RESOURCE_GROUP")
+    if rg is None:
+        return None
+    normalized = str(rg).strip()
+    if not normalized or normalized.lower() in ("__all__", "all", "*"):
+        return None
+    return normalized
+
+
+async def _arm_list(path: str, arm_token: str, api_version: str) -> list[dict[str, Any]]:
+    """Paginated ARM list returning all value entries."""
+    items: list[dict[str, Any]] = []
+    url = f"{ARM}{path}"
+    params: dict[str, Any] = {"api-version": api_version}
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        while url:
+            res = await client.get(
+                url,
+                params=params if url.startswith(ARM) else None,
+                headers={"Authorization": f"Bearer {arm_token}"},
+            )
+            if res.status_code == 401:
+                raise AzureDiscoveryError(
+                    "ARM returned 401 Unauthorized. Verify the identity has Reader "
+                    "on the subscription.",
+                    stage="permissions",
+                )
+            if res.status_code == 403:
+                raise AzureDiscoveryError(
+                    "ARM returned 403 Forbidden. Grant Reader (or higher) on the subscription "
+                    "to list resource groups and Cognitive Services accounts.",
+                    stage="permissions",
+                )
+            if res.status_code >= 400:
+                raise AzureDiscoveryError(
+                    f"ARM request failed ({res.status_code}) for {path}: {res.text[:400]}",
+                    stage="arm",
+                )
+            payload = res.json()
+            items.extend(payload.get("value") or [])
+            next_link = payload.get("nextLink")
+            if next_link:
+                url = next_link
+                params = {}
+            else:
+                break
+    return items
+
+
+async def list_resource_groups_in_subscription(config: dict[str, Any]) -> dict[str, Any]:
+    """List resource groups in the configured subscription."""
+    subscription = config.get("subscription_id") or os.environ.get("AZURE_SUBSCRIPTION_ID")
+    if not subscription:
+        raise AzureDiscoveryError(
+            "subscription_id is required to list resource groups.",
+            stage="configuration",
+        )
+
+    credential = _credential(config)
+    arm_token = _token(credential, "https://management.azure.com")
+    raw_groups = await _arm_list(
+        f"/subscriptions/{subscription}/resourcegroups",
+        arm_token,
+        RG_API,
+    )
+    groups: list[dict[str, Any]] = []
+    for item in raw_groups:
+        name = item.get("name")
+        if not name:
+            continue
+        props = item.get("properties") or {}
+        groups.append(
+            {
+                "name": str(name),
+                "location": item.get("location"),
+                "id": item.get("id"),
+                "provisioning_state": props.get("provisioningState"),
+            }
+        )
+    groups.sort(key=lambda g: g["name"].lower())
+
+    return {
+        "subscription_id": subscription,
+        "resource_groups": groups,
+        "count": len(groups),
+        "message": f"Found {len(groups)} resource group(s) in subscription {subscription}.",
+    }
+
+
 async def list_ai_accounts(config: dict[str, Any], arm_token: str) -> list[dict[str, Any]]:
     subscription = config["subscription_id"]
-    rg = config.get("resource_group") or os.environ.get("AZURE_RESOURCE_GROUP")
+    rg = _discovery_scope_rg(config)
 
-    accounts: list[dict[str, Any]] = []
-
-    # Prefer scoped resource group when provided
     if rg:
         path = f"/subscriptions/{subscription}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts"
         try:
             data = await _arm_get(path, arm_token, COG_API)
-            accounts.extend(data.get("value") or [])
         except AzureDiscoveryError as exc:
-            logger.warning("RG-scoped Cognitive Services list failed: %s", exc.message)
+            if "404" in exc.message:
+                raise AzureDiscoveryError(
+                    f"Resource group '{rg}' was not found in subscription {subscription}. "
+                    "Load resource groups and select a valid group, or choose "
+                    "'All resource groups' for a full subscription scan.",
+                    stage="configuration",
+                ) from exc
+            raise
+        return list(data.get("value") or [])
 
-    # Full subscription scan
     path = f"/subscriptions/{subscription}/providers/Microsoft.CognitiveServices/accounts"
     data = await _arm_get(path, arm_token, COG_API)
-    for acct in data.get("value") or []:
-        if not any(a.get("id") == acct.get("id") for a in accounts):
-            accounts.append(acct)
-
-    return accounts
+    return list(data.get("value") or [])
 
 
 async def _list_foundry_agents(
@@ -311,7 +402,7 @@ async def discover_agents_in_subscription(config: dict[str, Any]) -> dict[str, A
     """Discover agents. Returns {agents, accounts_scanned, errors, message}."""
     subscription = config.get("subscription_id") or os.environ.get("AZURE_SUBSCRIPTION_ID")
     tenant = config.get("tenant_id") or os.environ.get("AZURE_TENANT_ID")
-    rg = config.get("resource_group") or os.environ.get("AZURE_RESOURCE_GROUP")
+    rg = _discovery_scope_rg(config)
     project = config.get("foundry_project") or os.environ.get("AZURE_FOUNDRY_PROJECT") or "_project"
 
     if not subscription:
@@ -340,16 +431,22 @@ async def discover_agents_in_subscription(config: dict[str, Any]) -> dict[str, A
                     "name": name,
                     "location": config.get("region"),
                     "properties": {"endpoint": f"https://{name}.services.ai.azure.com"},
-                    "id": f"/subscriptions/{subscription}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{name}",
+                    "id": f"/subscriptions/{subscription}/resourceGroups/{rg or config.get('resource_group') or 'unknown'}/providers/Microsoft.CognitiveServices/accounts/{name}",
                 }
             )
 
-    if not account_entries and project:
-        errors.append(
-            "No Microsoft.CognitiveServices accounts were found in the subscription. "
-            "If agents live under a Foundry account outside the configured resource group, "
-            "add foundry_account / AI Services account name in Configure."
-        )
+    if not account_entries:
+        if rg:
+            errors.append(
+                f"No Microsoft.CognitiveServices accounts were found in resource group '{rg}'. "
+                "Try another resource group or choose 'All resource groups'."
+            )
+        elif project:
+            errors.append(
+                "No Microsoft.CognitiveServices accounts were found in the subscription. "
+                "If agents live under a Foundry account outside the configured resource group, "
+                "add foundry_account / AI Services account name in Configure."
+            )
 
     for acct in account_entries:
         name = acct.get("name")
@@ -419,14 +516,16 @@ async def discover_agents_in_subscription(config: dict[str, Any]) -> dict[str, A
         unique[a["id"]] = a
     agents = list(unique.values())
 
+    scope_label = f"resource group {rg}" if rg else f"subscription {subscription}"
+
     if agents:
         message = (
             f"Discovered {len(agents)} agent(s) across {len(scanned)} AI account(s) "
-            f"in subscription {subscription}."
+            f"in {scope_label}."
         )
     else:
         message = (
-            f"Connection to subscription {subscription} succeeded. "
+            f"Connection to {scope_label} succeeded. "
             f"Scanned {len(scanned)} Cognitive Services / AI account(s). "
             "No agents discovered. Confirm the Foundry project name, account, "
             "and that agents exist in Azure AI Foundry."
@@ -440,4 +539,5 @@ async def discover_agents_in_subscription(config: dict[str, Any]) -> dict[str, A
         "subscription_id": subscription,
         "resource_group": rg,
         "foundry_project": project,
+        "scope": "resource_group" if rg else "subscription",
     }
