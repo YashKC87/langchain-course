@@ -14,7 +14,7 @@ from app.services.metrics import metrics_service
 from app.services.optimization import optimization_service
 from app.services.telemetry import telemetry_service
 from app.services.workflow import build_waterfall, build_workflow
-from app.storage.store import store
+from app.storage.store import store, is_live_execution
 
 router = APIRouter()
 
@@ -281,7 +281,7 @@ async def list_executions(
     if agent:
         items = [e for e in items if e.agent_id == agent or e.agent_name == agent]
     if live_only:
-        items = [e for e in items if e.status.value == "running"]
+        items = [e for e in items if is_live_execution(e)]
     items.sort(key=lambda e: e.start_time or e.timestamp or datetime_min(), reverse=True)
     if not items:
         return {

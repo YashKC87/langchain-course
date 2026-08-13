@@ -50,7 +50,7 @@ export function LiveExecutionsPage() {
     <div className="layout-split">
       <div className="panel">
         <div className="panel-header">
-          <h2 className="panel-title">Running Executions</h2>
+          <h2 className="panel-title">Live & Recent Executions</h2>
         </div>
         {empty ? (
           <EmptyState title={empty.title} message={empty.message} />

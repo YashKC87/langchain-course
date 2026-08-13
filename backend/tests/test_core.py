@@ -243,6 +243,15 @@ async def test_secrets_not_returned_plaintext(client):
 
 @pytest.mark.asyncio
 async def test_ingest_creates_agent_and_workflow(client):
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    t0 = now.isoformat()
+    t1 = (now + timedelta(milliseconds=100)).isoformat()
+    t2 = (now + timedelta(seconds=1)).isoformat()
+    t_end = (now + timedelta(seconds=2)).isoformat()
+    t_end2 = (now + timedelta(seconds=1, milliseconds=500)).isoformat()
+
     await client.put(
         "/api/v1/integrations/otel/config",
         json={"fields": {"collector_endpoint": "http://localhost:4318", "protocol": "http/protobuf"}},
@@ -256,8 +265,8 @@ async def test_ingest_creates_agent_and_workflow(client):
                 "span_id": "s1",
                 "trace_id": "t1",
                 "parent_span_id": None,
-                "start_time": "2026-04-11T12:00:00+00:00",
-                "end_time": "2026-04-11T12:00:02+00:00",
+                "start_time": t0,
+                "end_time": t_end,
                 "status": "ok",
                 "attributes": {
                     "agent.id": "agent-device-1",
@@ -274,8 +283,8 @@ async def test_ingest_creates_agent_and_workflow(client):
                 "span_id": "s2",
                 "trace_id": "t1",
                 "parent_span_id": "s1",
-                "start_time": "2026-04-11T12:00:00.100000+00:00",
-                "end_time": "2026-04-11T12:00:01+00:00",
+                "start_time": t1,
+                "end_time": t_end2,
                 "status": "ok",
                 "attributes": {
                     "agent.id": "agent-device-1",
@@ -291,8 +300,8 @@ async def test_ingest_creates_agent_and_workflow(client):
                 "span_id": "s3",
                 "trace_id": "t1",
                 "parent_span_id": "s1",
-                "start_time": "2026-04-11T12:00:01+00:00",
-                "end_time": "2026-04-11T12:00:01.500000+00:00",
+                "start_time": t2,
+                "end_time": t_end2,
                 "status": "ok",
                 "attributes": {
                     "agent.id": "agent-device-1",
@@ -327,6 +336,10 @@ async def test_ingest_creates_agent_and_workflow(client):
 
     mcp = (await client.get("/api/v1/mcp")).json()
     assert mcp["empty"] is False
+
+    live = (await client.get("/api/v1/executions?live_only=true")).json()
+    assert live["empty"] is False
+    assert any(e["execution_id"] == exec_id for e in live["items"])
 
 
 @pytest.mark.asyncio

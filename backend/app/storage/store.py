@@ -22,6 +22,7 @@ from app.models.domain import (
     IntegrationCategory,
     IntegrationConfig,
     IntegrationStatus,
+    ExecutionStatus,
     MCPSummary,
     ModelSummary,
     NormalizedSpan,
@@ -31,8 +32,30 @@ from app.models.domain import (
 )
 
 
+LIVE_EXECUTION_WINDOW_MINUTES = 120
+
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def is_live_execution(
+    execution: Execution,
+    *,
+    now: datetime | None = None,
+    window_minutes: int = LIVE_EXECUTION_WINDOW_MINUTES,
+) -> bool:
+    """Running executions, or those that finished within the recent live window."""
+    if execution.status == ExecutionStatus.RUNNING:
+        return True
+    moment = now or _utcnow()
+    cutoff = moment.timestamp() - (window_minutes * 60)
+    ref = execution.end_time or execution.start_time or execution.timestamp
+    if ref is None:
+        return False
+    if ref.tzinfo is None:
+        ref = ref.replace(tzinfo=timezone.utc)
+    return ref.timestamp() >= cutoff
 
 
 def _default_integrations() -> dict[str, Integration]:
