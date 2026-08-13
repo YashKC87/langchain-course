@@ -477,3 +477,31 @@ def test_auto_enable_otel_from_env(monkeypatch):
     enabled = auto_enable_integrations(fresh.integrations)
     assert enabled == ["otel"]
     assert fresh.integrations["otel"].enabled is True
+
+
+def test_azure_secret_ref_restored_from_env(monkeypatch):
+    from app.models.domain import IntegrationConfig, IntegrationStatus
+    from app.storage.persistence import apply_env_defaults, apply_saved_config
+    from app.storage.store import ObservabilityStore
+
+    monkeypatch.setenv("AZURE_CLIENT_SECRET", "test-secret-from-env")
+    fresh = ObservabilityStore()
+    azure = fresh.integrations["azure"]
+    azure.configured = True
+    azure.config = IntegrationConfig(
+        fields={
+            "tenant_id": "c50e9e25-55e4-4e18-8ed5-4acacc035533",
+            "subscription_id": "7a735755-6139-4d2c-8ba4-5fccaaae24a0",
+            "client_id": "cdd2a976-e599-40bd-a5dd-a42db1b9f358",
+        },
+        secret_refs={},
+        auth_method="Service Principal",
+    )
+    azure.status = IntegrationStatus.CONNECTION_FAILED
+    apply_env_defaults(fresh.integrations)
+    assert fresh.integrations["azure"].config.secret_refs.get("client_secret") == "ref:azure:client_secret"
+
+    from app.services.integrations import integration_service
+
+    err = integration_service._validate_azure_fields(fresh.integrations["azure"])
+    assert err is None

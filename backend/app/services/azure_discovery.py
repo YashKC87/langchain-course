@@ -156,8 +156,12 @@ async def _arm_get(path: str, arm_token: str, api_version: str) -> dict[str, Any
 
 
 def _discovery_scope_rg(config: dict[str, Any]) -> str | None:
-    """Return a resource group name when discovery should be RG-scoped, else None (full subscription)."""
-    rg = config.get("resource_group") or os.environ.get("AZURE_RESOURCE_GROUP")
+    """Return a resource group name when discovery should be RG-scoped, else None (full subscription).
+
+    Uses saved integration config only — AZURE_RESOURCE_GROUP in .env is merged at startup
+    via apply_env_defaults, not re-read here (avoids stale env overriding a cleared UI scope).
+    """
+    rg = config.get("resource_group")
     if rg is None:
         return None
     normalized = str(rg).strip()

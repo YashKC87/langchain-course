@@ -6,6 +6,8 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
+import os
+
 from app.connectors.cloud import AWSConnector, AzureConnector
 from app.models.domain import (
     ActivityEvent,
@@ -219,6 +221,11 @@ class IntegrationService:
             return ["api_endpoint"]
         return []
 
+    def _azure_has_client_secret(self, integ: Integration) -> bool:
+        if integ.config.secret_refs.get("client_secret") or integ.config.fields.get("client_secret"):
+            return True
+        return bool(os.environ.get("AZURE_CLIENT_SECRET") or os.environ.get("AZURE_CLIENT_SECRET_VALUE"))
+
     def _validate_azure_fields(self, integ: Integration) -> str | None:
         tenant = str(integ.config.fields.get("tenant_id") or "")
         subscription = str(integ.config.fields.get("subscription_id") or "")
@@ -233,7 +240,7 @@ class IntegrationService:
                     "Service Principal authentication requires Application (Client) ID. "
                     "Register an app in Entra ID and enter the Client ID."
                 )
-            if not integ.config.secret_refs.get("client_secret") and not integ.config.fields.get("client_secret"):
+            if not self._azure_has_client_secret(integ):
                 return "Service Principal authentication requires Client Secret (stored as a secure reference)."
         return None
 

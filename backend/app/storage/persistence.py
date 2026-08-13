@@ -93,6 +93,15 @@ def _azure_resource_fields_from_env() -> dict[str, str]:
     return out
 
 
+def _apply_azure_secret_refs_from_env(azure: Integration) -> None:
+    """Restore Service Principal secret refs from env — secrets are never persisted to disk."""
+    if not os.environ.get("AZURE_CLIENT_SECRET") and not os.environ.get("AZURE_CLIENT_SECRET_VALUE"):
+        return
+    auth = (azure.config.auth_method or os.environ.get("AZURE_AUTH_METHOD") or "").lower()
+    if "service principal" in auth or azure.config.fields.get("client_id"):
+        azure.config.secret_refs.setdefault("client_secret", "ref:azure:client_secret")
+
+
 def apply_env_defaults(integrations: dict[str, Integration]) -> None:
     """Pre-fill Azure/AWS/GCP from environment when not already configured.
 
@@ -111,7 +120,7 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
                 **resource_fields,
             }
             azure.config.auth_method = os.environ.get("AZURE_AUTH_METHOD", "Managed Identity")
-            if os.environ.get("AZURE_CLIENT_SECRET"):
+            if os.environ.get("AZURE_CLIENT_SECRET") or os.environ.get("AZURE_CLIENT_SECRET_VALUE"):
                 azure.config.secret_refs["client_secret"] = "ref:azure:client_secret"
             azure.configured = True
             azure.status = IntegrationStatus.DISABLED
@@ -119,10 +128,16 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
         elif resource_fields:
             # Merge resource names without clearing existing tenant/subscription.
             # Saved resource_group from disk/UI wins over .env on restart.
+            saved_azure = load_integration_overrides().get("azure") or {}
+            saved_fields = (saved_azure.get("config") or {}).get("fields") or {}
             merged = dict(azure.config.fields)
             for key, val in resource_fields.items():
-                if key == "resource_group" and merged.get("resource_group"):
-                    continue
+                if key == "resource_group":
+                    if merged.get("resource_group"):
+                        continue
+                    # User cleared RG in UI — do not re-inject from .env on restart.
+                    if azure.configured and "resource_group" not in saved_fields:
+                        continue
                 merged[key] = val
             azure.config.fields = merged
             if os.environ.get("AZURE_AUTH_METHOD") and not azure.config.auth_method:
@@ -132,6 +147,8 @@ def apply_env_defaults(integrations: dict[str, Integration]) -> None:
                 if azure.status == IntegrationStatus.NOT_CONFIGURED:
                     azure.status = IntegrationStatus.DISABLED
                 azure.auth_state = azure.auth_state or "configured_from_env"
+
+        _apply_azure_secret_refs_from_env(azure)
 
     aws = integrations.get("aws")
     if aws and not aws.configured:
