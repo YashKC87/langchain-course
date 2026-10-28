@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DWIP Console</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="console">
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <nav class="side" id="side">
+    <div class="brand"><div class="logo">D</div><div class="brand-text"><h1>DWIP</h1><p>Workplace Intelligence</p></div></div>
+    <a href="#overview" class="nav active" data-view="overview"><span>🏠</span><b>Executive Overview</b></a>
+    <a href="#dex" class="nav" data-view="dex"><span>💜</span><b>Digital Employee Experience</b></a>
+    <a href="#devices" class="nav sub" data-view="devices"><span>💻</span><b>Devices</b></a>
+    <a href="#apps" class="nav sub" data-view="apps"><span>🧩</span><b>Applications</b></a>
+    <a href="#engage" class="nav sub" data-view="engage"><span>🗳️</span><b>Engagement</b></a>
+    <a href="#collab" class="nav sub" data-view="collab"><span>💬</span><b>Conversations</b><i class="count" id="n-unread"></i></a>
+    <a href="#guides" class="nav sub" data-view="guides"><span>🧭</span><b>In-app guidance</b></a>
+    <a href="#alerts" class="nav" data-view="alerts"><span>🚨</span><b>Proactive Monitoring</b><i class="count" id="n-alerts"></i></a>
+    <a href="#rca" class="nav" data-view="rca"><span>🧬</span><b>AI Root Cause Analysis</b></a>
+    <a href="#predict" class="nav" data-view="predict"><span>🔮</span><b>Predictive Intelligence</b></a>
+    <a href="#remediation" class="nav" data-view="remediation"><span>🛠️</span><b>Intelligent Remediation</b><i class="count" id="n-appr"></i></a>
+    <a href="#flows" class="nav sub" data-view="flows"><span>🔀</span><b>Flows</b></a>
+    <a href="#assist" class="nav" data-view="assist"><span>✨</span><b>AI Assist</b></a>
+    <a href="#integrations" class="nav" data-view="integrations"><span>🔌</span><b>Enterprise Integrations</b></a>
+    <a href="#reports" class="nav" data-view="reports"><span>📈</span><b>Reports and Analytics</b></a>
+    <a href="#governance" class="nav" data-view="governance"><span>🔐</span><b>Governance and Audit</b></a>
+    <div class="side-foot"><div class="live"><span class="pulse"></span><span id="live-text">Connecting…</span></div>
+      <div class="muted small" id="ai-status">AI: checking…</div>
+      <div class="muted small" id="who">…</div></div>
+  </nav>
+
+  <main class="wrap">
+    <form class="filterbar card" id="filters" aria-label="Filters">
+      <span class="muted small">Filter</span>
+      <select name="location"><option value="">All locations</option></select>
+      <select name="department"><option value="">All departments</option></select>
+      <select name="kind"><option value="">All device types</option><option value="laptop">Laptops</option>
+        <option value="desktop">Desktops</option><option value="mobile">Mobiles</option><option value="vdi">VDI</option></select>
+      <select name="data"><option value="">Live + demo data</option><option value="live">Live only</option><option value="demo">Demo only</option></select>
+      <select name="period"><option value="1h">Last hour</option><option value="24h">Last 24 h</option><option value="7d">Last 7 days</option></select>
+      <span class="fresh" id="freshness"></span>
+    </form>
+    <!-- ============ OVERVIEW ============ -->
+    <section class="view active" id="view-overview">
+      <header class="vhead"><h2>Experience overview</h2><p class="muted">Every device, app, OS and virtual desktop, all in one place.</p></header>
+      <div class="hero">
+        <div class="card ring-card">
+          <svg class="ring big" viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="bar" id="fleet-ring" cx="60" cy="60" r="52"/></svg>
+          <div class="ring-label"><span class="num" id="fleet-dex">–</span><span class="cap">Fleet DEX score</span></div>
+        </div>
+        <div class="kpis">
+          <div class="card kpi"><span class="ico">💻</span><span class="num" data-k="devices">0</span><span class="cap">Devices</span><span class="sub" id="online-sub"></span></div>
+          <div class="card kpi" data-go="alerts"><span class="ico">🚨</span><span class="num" data-k="alerts">0</span><span class="cap">AI alerts</span></div>
+          <div class="card kpi" data-go="devices"><span class="ico">⚠️</span><span class="num" data-k="open_issues">0</span><span class="cap">Open issues</span></div>
+          <div class="card kpi"><span class="ico">✨</span><span class="num" data-k="fixed">0</span><span class="cap">Auto-fixed</span></div>
+          <div class="card kpi" data-go="alerts"><span class="ico">🛡️</span><span class="num" data-k="pending_approvals">0</span><span class="cap">Awaiting approval</span></div>
+          <div class="card kpi" data-go="engage"><span class="ico">😊</span><span class="num" data-k="satisfaction" data-dec="1">–</span><span class="cap">User rating / 5</span></div>
+        </div>
+      </div>
+      <section class="loop card">
+        <div class="step" data-step="issue"><b>N</b>otice</div><i></i>
+        <div class="step" data-step="issue"><b>D</b>iscover</div><i></i>
+        <div class="step" data-step="telemetry"><b>U</b>nderstand</div><i></i>
+        <div class="step" data-step="decision"><b>D</b>ecide</div><i></i>
+        <div class="step" data-step="executed"><b>E</b>xecute</div><i></i>
+        <div class="step" data-step="notify"><b>N</b>otify</div>
+      </section>
+      <div class="cols3">
+        <div class="card panel"><h3>✨ AI insights</h3><div id="ov-insights" class="stack"></div></div>
+        <div class="card panel"><h3>🔮 Predicted risks</h3><div id="ov-predict" class="stack"></div></div>
+        <div class="card panel"><h3>📊 Experience by platform</h3><div id="ov-kinds" class="hbars"></div>
+          <h3 style="margin-top:18px">🧩 Least healthy apps</h3><div id="ov-apps" class="hbars"></div></div>
+      </div>
+      <div class="cols2">
+        <div class="card panel"><h3>🛡️ Approvals <span class="badge" id="appr-count">0</span></h3>
+          <div id="approvals" class="stack"></div><p class="muted" id="appr-empty">Nothing waiting. 🎉</p></div>
+        <div class="card panel"><h3>⚡ Live activity</h3><ul id="feed" class="feed"></ul></div>
+      </div>
+    </section>
+
+    <!-- ============ DEVICES ============ -->
+    <section class="view" id="view-devices">
+      <header class="vhead"><h2>Devices</h2><p class="muted">Laptops, desktops, mobiles and virtual desktops (Citrix and AVD).</p></header>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-kind="">All</button>
+        <button class="tab" data-kind="laptop">💻 Laptops</button>
+        <button class="tab" data-kind="desktop">🖥️ Desktops</button>
+        <button class="tab" data-kind="mobile">📱 Mobiles</button>
+        <button class="tab" data-kind="vdi">☁️ VDI</button>
+        <span class="tab-ink"></span>
+      </div>
+      <div class="devices" id="devices"></div>
+      <p class="empty" id="empty">No devices yet. Start the agent or the simulator (see README).</p>
+    </section>
+
+    <!-- ============ APPS ============ -->
+    <section class="view" id="view-apps">
+      <header class="vhead"><h2>Application visibility &amp; performance</h2><p class="muted">Health score per app from crashes, hangs, response time and resource use.</p></header>
+      <div class="devices" id="apps"></div>
+    </section>
+
+    <!-- ============ ALERTS ============ -->
+    <section class="view" id="view-alerts">
+      <header class="vhead"><h2>Proactive monitoring</h2><p class="muted">Devices behaving unusually and problems spreading across the fleet, plus which experience signals are actually being collected.</p></header>
+      <div class="cols2 wide-left">
+        <div id="alerts" class="stack"></div>
+        <div class="card panel"><h3>📡 Monitoring coverage</h3><p class="muted small">Live = collected from real devices. Demo = simulator only. Not collected = shown as a gap, never as a value.</p><div id="coverage"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ PREDICTIONS ============ -->
+    <section class="view" id="view-predict">
+      <header class="vhead"><h2>Predictive analytics</h2><p class="muted">Problems forecast before users notice them.</p></header>
+      <div class="devices" id="predict"></div>
+    </section>
+
+    <!-- ============ COLLAB ============ -->
+    <section class="view" id="view-collab">
+      <header class="vhead"><h2>IT ↔ employee conversations</h2><p class="muted">Employees ask for help from their device. The AI checks the device first, then IT replies.</p></header>
+      <div class="chatwrap card">
+        <div class="threads" id="threads"></div>
+        <div class="thread" id="thread"><p class="muted center">Pick a conversation</p></div>
+      </div>
+    </section>
+
+    <!-- ============ GUIDES ============ -->
+    <section class="view" id="view-guides">
+      <header class="vhead"><h2>In-app guidance</h2><p class="muted">Step-by-step guides sent to devices, either pushed by IT or triggered automatically when a matching issue appears.</p></header>
+      <div class="cols2 wide-left">
+        <div class="devices" id="guides"></div>
+        <form class="card panel form" id="guide-form">
+          <h3>➕ New guide</h3>
+          <input name="icon" placeholder="Icon (emoji)" value="💡" maxlength="4">
+          <input name="title" placeholder="Title" required>
+          <input name="summary" placeholder="One-line summary">
+          <textarea name="steps" rows="5" placeholder="One step per line" required></textarea>
+          <select name="trigger_issue"><option value="">Manual only</option>
+            <option value="disk_full">Auto: storage full</option><option value="low_battery">Auto: low battery</option>
+            <option value="os_patch_overdue">Auto: patches overdue</option><option value="vdi_latency">Auto: VDI lag</option>
+            <option value="app_slow:Teams">Auto: Teams slow</option><option value="app_slow:Outlook">Auto: Outlook slow</option></select>
+          <button class="btn go">Create guide</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ ENGAGEMENT ============ -->
+    <section class="view" id="view-engage">
+      <header class="vhead"><h2>Employee engagement</h2><p class="muted">Pulse surveys, sentiment by department and how often guides get completed.</p></header>
+      <div class="kpis four" id="eng-kpis">
+        <div class="card kpi"><span class="ico">💜</span><span class="num" id="eng-score">–</span><span class="cap">Experience score (−100 to 100)</span></div>
+        <div class="card kpi"><span class="ico">📨</span><span class="num" id="eng-rate">–</span><span class="cap">Response rate %</span></div>
+        <div class="card kpi"><span class="ico">🗳️</span><span class="num" id="eng-resp">–</span><span class="cap">Responses</span></div>
+        <div class="card kpi"><span class="ico">🧭</span><span class="num" id="eng-guide">–</span><span class="cap">Guide completion %</span></div>
+      </div>
+      <div class="cols3">
+        <div class="card panel"><h3>🏢 Sentiment by department</h3><div id="eng-dept" class="hbars"></div>
+          <h3 style="margin-top:18px">📱 By device type</h3><div id="eng-kind" class="hbars"></div></div>
+        <div class="card panel"><h3>📣 Pulse campaigns</h3>
+          <form class="form inline" id="camp-form">
+            <input name="question" placeholder="Ask employees something…" required>
+            <select name="target_kind"><option value="">Everyone</option><option value="laptop">Laptops</option>
+              <option value="desktop">Desktops</option><option value="mobile">Mobiles</option><option value="vdi">VDI</option></select>
+            <button class="btn go">Send pulse</button>
+          </form>
+          <div id="campaigns" class="stack"></div></div>
+        <div class="card panel"><h3>🗨️ What employees say</h3><div id="eng-comments" class="stack"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ DEX ============ -->
+    <section class="view" id="view-dex">
+      <header class="vhead"><h2>Digital employee experience</h2><p class="muted">How work feels for employees, ranked by Employee Impact Score. Uses the filters above.</p></header>
+      <div class="kpis five">
+        <div class="card kpi"><span class="ico">💜</span><span class="num" id="dx-dex">–</span><span class="cap">Overall DEX</span><span class="sub" id="dx-sub"></span></div>
+        <div class="card kpi"><span class="ico">👥</span><span class="num" id="dx-emp">–</span><span class="cap">Impacted employees</span></div>
+        <div class="card kpi" data-go="rca"><span class="ico">🔥</span><span class="num" id="dx-crit">–</span><span class="cap">Critical issues (impact ≥ 60)</span></div>
+        <div class="card kpi" data-go="alerts"><span class="ico">🚨</span><span class="num" id="dx-alerts">–</span><span class="cap">Proactive alerts</span></div>
+        <div class="card kpi" data-go="predict"><span class="ico">🔮</span><span class="num" id="dx-pred">–</span><span class="cap">Predicted risks</span></div>
+      </div>
+      <div class="cols2">
+        <div class="card panel"><h3>📉 Experience trend</h3><div id="dx-trend" class="trend"></div></div>
+        <div class="card panel"><h3>🔥 Top 5 experience problems</h3><div id="dx-top" class="stack"></div></div>
+      </div>
+      <div class="cols2">
+        <div class="card panel"><h3>🗺️ Experience by location</h3><p class="muted small">Average DEX. Click a cell to see those devices.</p><div id="dx-heat" class="heat"></div></div>
+        <div class="card panel"><h3>🧩 Application experience</h3><div id="dx-apps" class="hbars"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ RCA ============ -->
+    <section class="view" id="view-rca">
+      <header class="vhead"><h2>AI root cause analysis</h2><p class="muted">Each incident groups one problem across devices and lists what is <b>observed</b>, what is <b>correlated</b> and what is only a <b>hypothesis</b>. A cause stays unconfirmed until the evidence supports it.</p></header>
+      <div id="rca" class="stack"></div>
+    </section>
+
+    <!-- ============ REMEDIATION ============ -->
+    <section class="view" id="view-remediation">
+      <header class="vhead"><h2>Intelligent remediation</h2><p class="muted">Detect → Analyse → Recommend → Approve → Execute → Verify. Only actions from the approved catalogue can run, and the AI cannot run anything itself.</p></header>
+      <div class="kpis four">
+        <div class="card kpi"><span class="ico">✅</span><span class="num" id="rm-exec">–</span><span class="cap">Executed</span></div>
+        <div class="card kpi"><span class="ico">🔍</span><span class="num" id="rm-ver">–</span><span class="cap">Verified fixed</span></div>
+        <div class="card kpi"><span class="ico">📈</span><span class="num" id="rm-rate">–</span><span class="cap">Success rate %</span></div>
+        <div class="card kpi"><span class="ico">❌</span><span class="num" id="rm-fail">–</span><span class="cap">Failed</span></div>
+      </div>
+      <div class="cols2 wide-left">
+        <div class="card panel"><h3>🛡️ Waiting for approval</h3><div id="approvals2" class="stack"></div>
+          <h3 style="margin-top:18px">🧾 Recent actions</h3><div id="rm-recent" class="table"></div></div>
+        <div class="card panel"><h3>📚 Approved action catalogue</h3><div id="rm-catalog" class="stack"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ AI ASSIST ============ -->
+    <section class="view" id="view-assist">
+      <header class="vhead"><h2>AI Assist</h2><p class="muted">Ask in plain language. Answers keep <b>facts</b>, <b>predictions</b>, <b>correlations</b> and <b>hypotheses</b> apart, with evidence, confidence and data age. Read-only: it never changes anything.</p></header>
+      <form class="card assist-q" id="as-form"><input id="as-q" maxlength="500" placeholder="e.g. Why are devices in Bangalore slow to log in?" autocomplete="off"><button class="btn go">Investigate</button></form>
+      <div class="chips" id="as-chips">
+        <button>Why are devices experiencing slow login times?</button>
+        <button>Which devices are likely to become non-compliant in the next seven days?</button>
+        <button>Why is Microsoft Teams performance degraded in Bangalore?</button>
+        <button>What caused the increase in AVD session failures?</button>
+        <button>Identify endpoints with high CPU and correlate with recent software updates</button>
+        <button>Recommend the safest remediation for recurring BitLocker compliance failures</button>
+      </div>
+      <div id="as-out"></div>
+    </section>
+
+    <!-- ============ INTEGRATIONS ============ -->
+    <section class="view" id="view-integrations">
+      <header class="vhead"><h2>Enterprise integrations</h2><p class="muted">Health of each data source. Sources that aren't configured show their status, never made-up data.</p></header>
+      <div class="devices" id="connectors"></div>
+    </section>
+
+    <!-- ============ REPORTS ============ -->
+    <section class="view" id="view-reports">
+      <header class="vhead"><h2>Reports and analytics</h2><p class="muted">Benchmarks against your own enterprise baseline, plus AI usage and cost.</p></header>
+      <div class="cols2 wide-left">
+        <div class="card panel"><h3>🏁 Benchmark by
+          <select id="bm-dim"><option value="location">location</option><option value="department">business unit</option>
+            <option value="kind">device type</option><option value="os_version">OS version</option>
+            <option value="model">device model</option><option value="vdi_pool">VDI host pool</option></select></h3>
+          <div id="bm-table" class="table"></div><p class="muted small" id="bm-note"></p></div>
+        <div class="card panel"><h3>💡 Observed differences</h3><div id="bm-insights" class="stack"></div></div>
+      </div>
+      <div class="card panel"><h3>🧠 AI usage and cost</h3><div id="ai-report"></div></div>
+    </section>
+
+    <!-- ============ GOVERNANCE ============ -->
+    <section class="view" id="view-governance">
+      <header class="vhead"><h2>Governance and audit</h2><p class="muted">Who can do what, how long data is kept, where the AI runs, and every change made.</p></header>
+      <div id="gov-warn" class="stack"></div>
+      <div class="cols2">
+        <div class="card panel"><h3>👤 Roles</h3><div id="gov-roles" class="table"></div></div>
+        <div class="card panel"><h3>🗄️ Data and AI policy</h3><div id="gov-policy"></div>
+          <h3 style="margin-top:18px">⚖️ Impact score weights</h3><form id="gov-weights" class="form"></form></div>
+      </div>
+      <div class="card panel"><h3>🧾 Audit log</h3><div id="gov-audit" class="table"></div></div>
+    </section>
+
+    <!-- ============ FLOWS ============ -->
+    <section class="view" id="view-flows">
+      <header class="vhead"><h2>Flows</h2><p class="muted">Build workflows visually: a trigger, then conditions, remote actions, notifications and Service/API calls. Every run is deterministic, logged and can be tried as a dry run first.</p></header>
+      <div class="flow-layout">
+        <aside class="card panel flow-list"><h3>🔀 Flows <button class="btn ghost sm" id="fl-new">＋ New</button></h3><div id="fl-list" class="stack"></div></aside>
+        <div class="flow-main">
+          <div class="card flow-toolbar">
+            <span class="muted small">Add:</span>
+            <button data-add="condition">◇ Condition</button><button data-add="action">⚙️ Remote action</button>
+            <button data-add="notify_user">💬 Notify employee</button><button data-add="notify_it">📣 Notify IT</button>
+            <button data-add="guide">🧭 Guide</button><button data-add="service_api">☁️ Service/API</button><button data-add="end">⏹ End</button>
+            <span class="grow"></span><button class="btn go sm" id="fl-save">Save</button>
+          </div>
+          <div class="canvas-wrap card" id="fl-wrap"><div class="canvas" id="fl-canvas"><svg id="fl-svg"></svg></div>
+            <div class="minimap" id="fl-mini"></div></div>
+          <div class="card flow-run">
+            <select id="fl-dev"><option value="">No device</option></select>
+            <input id="fl-inc" placeholder="input.incident_number (optional)">
+            <label class="small"><input type="checkbox" id="fl-dry" checked> Dry run (no changes)</label>
+            <button class="btn go sm" id="fl-run">▶ Run</button>
+            <span class="muted small" id="fl-msg"></span>
+          </div>
+          <div class="card panel"><h3>🧾 Run history</h3><div id="fl-runs" class="stack"></div></div>
+        </div>
+        <aside class="card panel flow-inspect" id="fl-inspect"></aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- drawer -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <button class="close" id="close" aria-label="Close">✕</button>
+    <div id="drawer-body"></div>
+  </aside>
+
+  <!-- AI copilot -->
+  <button class="orb" id="orb" aria-label="Open AI copilot"><span>✨</span></button>
+  <section class="copilot" id="copilot" aria-hidden="true">
+    <header><div><b>DWIP Copilot</b><div class="muted small" id="cp-model">local AI</div></div>
+      <button class="close" id="cp-close" aria-label="Close">✕</button></header>
+    <div class="cp-body" id="cp-body">
+      <div class="bubble ai">Hi! Ask me anything about your devices, apps, alerts or employees. 👋</div>
+    </div>
+    <div class="chips" id="cp-chips">
+      <button>What needs my attention?</button><button>Which apps are crashing?</button>
+      <button>What problems are predicted?</button><button>How are VDI sessions doing?</button>
+      <button>Worst devices?</button>
+    </div>
+    <form class="cp-input" id="cp-form"><input id="cp-q" placeholder="Ask about the fleet…" autocomplete="off"><button class="btn go">➤</button></form>
+  </section>
+
+  <div class="toasts" id="toasts"></div>
+  <form class="signin card" id="signin" hidden><h3>🔐 Sign in to DWIP</h3><p class="muted small">Enter your console access token.</p>
+    <input type="password" id="signin-token" autocomplete="off" placeholder="Access token"><button class="btn go">Sign in</button></form>
+  <script src="/static/app.js"></script>
+  <script src="/static/intel.js"></script>
+  <script src="/static/flows.js"></script>
+</body>
+</html>
