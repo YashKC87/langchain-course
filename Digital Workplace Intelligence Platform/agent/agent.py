@@ -5,8 +5,14 @@ user notifications. Actions are DRY-RUN unless --allow-actions is passed, and
 reboot/repair are always simulated.
 
     python agent/agent.py --server http://127.0.0.1:8000
+
+Packaged as dwip-agent.exe it also installs itself as a startup service (run as administrator):
+
+    dwip-agent.exe install --server http://<dwip-server>:8000 --token <enrolment token> [--location X]
+    dwip-agent.exe uninstall
 """
 import argparse
+import ctypes
 import json
 import os
 import platform
@@ -15,12 +21,22 @@ import subprocess
 import sys
 import tempfile
 import time
+import shutil
 import uuid
 
 import httpx
 import psutil
 
-STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".agent_state.json")
+FROZEN = getattr(sys, "frozen", False)          # running as the packaged dwip-agent.exe
+# installed agents keep state and settings in ProgramData; a source checkout keeps them next to the script
+DATA_DIR = os.environ.get("DWIP_AGENT_DIR") or (
+    os.path.join(os.environ.get("ProgramData", r"C:\ProgramData"), "DWIP") if FROZEN
+    else os.path.dirname(os.path.abspath(__file__)))
+STATE_FILE = os.path.join(DATA_DIR, ".agent_state.json")
+CONFIG_FILE = os.path.join(DATA_DIR, "agent.json")
+INSTALL_DIR = os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "DWIP")
+TASK_NAME = "DWIP Agent"
+IMDS = "http://169.254.169.254/metadata/instance?api-version=2021-02-01"
 TEMP_AGE_DAYS = 7
 OS_CACHE_SECONDS = 600
 
@@ -58,6 +74,7 @@ class Agent:
         self.http = httpx.Client(timeout=10)
         self.state = self._load_state()
         self._os_cache: tuple[float, dict] = (0.0, {})
+        self.azure = self._azure()
         self._latency = None
         self._procs: dict[int, psutil.Process] = {}
         psutil.cpu_percent(None)  # prime the counter
@@ -70,7 +87,28 @@ class Agent:
         except (OSError, ValueError):
             return {}
 
+    @staticmethod
+    def _azure() -> dict | None:
+        """Azure VM identity from the instance metadata service (only reachable inside Azure)."""
+        try:
+            r = httpx.get(IMDS, headers={"Metadata": "true"}, timeout=1.5)
+            c = r.json()["compute"]
+        except (httpx.HTTPError, ValueError, KeyError):
+            return None
+        return {k: c.get(k) for k in ("vmId", "name", "location", "vmSize", "resourceGroupName",
+                                       "subscriptionId", "resourceId", "osType")}
+
+    @staticmethod
+    def _ips() -> list[str]:
+        out = []
+        for name, addrs in psutil.net_if_addrs().items():
+            for a in addrs:
+                if a.family == socket.AF_INET and not a.address.startswith(("127.", "169.254.")):
+                    out.append(a.address)
+        return out[:6]
+
     def _save_state(self):
+        os.makedirs(DATA_DIR, exist_ok=True)
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(self.state, f)
 
@@ -98,10 +136,12 @@ class Agent:
         if vdi and not self.kind:
             plat = vdi[0]
         kind = self.kind or ("vdi" if vdi else "laptop" if psutil.sensors_battery() else "desktop")
+        az = self.azure
         body = {"token": self.token, "hostname": socket.gethostname(), "kind": kind,
-                "platform": plat, "os_version": ver, "model": platform.machine(),
+                "platform": plat, "os_version": ver,
+                "model": f"Azure VM {az['vmSize']}" if az else platform.machine(),
                 "user": os.environ.get("USERNAME") or os.environ.get("USER", ""),
-                "location": self.location, "department": self.department,
+                "location": self.location or (az and f"Azure {az['location']}"), "department": self.department,
                 "device_id": self.state.get("device_id") or uuid.uuid5(uuid.NAMESPACE_DNS,
                                                                        f"{socket.gethostname()}-{uuid.getnode()}").hex[:16]}
         r = self.http.post(f"{self.server}/api/enroll", json=body)
@@ -204,6 +244,9 @@ class Agent:
         if batt:
             m["battery_pct"] = round(batt.percent)
             m["battery_plugged"] = bool(batt.power_plugged)
+        m["ip_addresses"] = self._ips()
+        if self.azure:
+            m["azure"] = self.azure
         vdi = self._vdi()
         if vdi:
             m["protocol"] = vdi[1]
@@ -316,17 +359,80 @@ class Agent:
             time.sleep(self.interval)
 
 
+# ---------- install as a startup service (Windows) ----------
+def _is_admin() -> bool:
+    try:
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
+
+
+def install(a) -> int:
+    if platform.system() != "Windows":
+        print("install is for Windows; on macOS/Linux run the agent from a launchd/systemd unit")
+        return 1
+    if not _is_admin():
+        print("Run this from an administrator prompt (it creates a service task under SYSTEM).")
+        return 1
+    os.makedirs(INSTALL_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
+    exe = os.path.join(INSTALL_DIR, "dwip-agent.exe")
+    if FROZEN and os.path.abspath(sys.executable) != os.path.abspath(exe):
+        subprocess.run(["schtasks", "/End", "/TN", TASK_NAME], capture_output=True)
+        shutil.copy2(sys.executable, exe)
+    cfg = {"server": a.server, "token": a.token, "interval": a.interval, "location": a.location,
+           "department": a.department, "kind": a.kind, "allow_actions": a.allow_actions}
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+    target = f'"{exe}" run' if FROZEN else f'"{sys.executable}" "{os.path.abspath(__file__)}" run'
+    r = subprocess.run(["schtasks", "/Create", "/F", "/TN", TASK_NAME, "/SC", "ONSTART", "/RU", "SYSTEM",
+                        "/RL", "HIGHEST", "/TR", target], capture_output=True, text=True)
+    if r.returncode:
+        print(r.stderr or r.stdout)
+        return r.returncode
+    subprocess.run(["schtasks", "/Run", "/TN", TASK_NAME], capture_output=True)
+    print(f"[dwip] installed to {INSTALL_DIR}; reporting to {a.server}. Settings: {CONFIG_FILE}")
+    return 0
+
+
+def uninstall() -> int:
+    if not _is_admin():
+        print("Run this from an administrator prompt.")
+        return 1
+    subprocess.run(["schtasks", "/End", "/TN", TASK_NAME], capture_output=True)
+    subprocess.run(["schtasks", "/Delete", "/F", "/TN", TASK_NAME], capture_output=True)
+    print(f"[dwip] service removed. Delete {INSTALL_DIR} and {DATA_DIR} to remove all files.")
+    return 0
+
+
 def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Windows consoles default to cp1252
+    except AttributeError:
+        pass
+    try:
+        with open(CONFIG_FILE, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except (OSError, ValueError):
+        cfg = {}
     ap = argparse.ArgumentParser(description="DWIP endpoint agent")
-    ap.add_argument("--server", default=os.environ.get("DWIP_SERVER", "http://127.0.0.1:8000"))
-    ap.add_argument("--token", default=os.environ.get("DWIP_ENROLL_TOKEN", "dev-token"))
-    ap.add_argument("--interval", type=int, default=15)
-    ap.add_argument("--location", default=os.environ.get("DWIP_LOCATION"), help="office/site, e.g. Bangalore")
-    ap.add_argument("--department", default=os.environ.get("DWIP_DEPARTMENT"))
-    ap.add_argument("--kind", choices=["laptop", "desktop", "vdi"], help="override auto-detection")
-    ap.add_argument("--allow-actions", action="store_true", help="really delete old temp files")
+    ap.add_argument("command", nargs="?", default="run", choices=["run", "install", "uninstall"])
+    ap.add_argument("--server", default=os.environ.get("DWIP_SERVER") or cfg.get("server", "http://127.0.0.1:8000"))
+    ap.add_argument("--token", default=os.environ.get("DWIP_ENROLL_TOKEN") or cfg.get("token", "dev-token"))
+    ap.add_argument("--interval", type=int, default=cfg.get("interval", 15))
+    ap.add_argument("--location", default=os.environ.get("DWIP_LOCATION") or cfg.get("location"),
+                    help="office/site, e.g. Bangalore")
+    ap.add_argument("--department", default=os.environ.get("DWIP_DEPARTMENT") or cfg.get("department"))
+    ap.add_argument("--kind", choices=["laptop", "desktop", "vdi"], default=cfg.get("kind"),
+                    help="override auto-detection")
+    ap.add_argument("--allow-actions", action="store_true", default=cfg.get("allow_actions", False),
+                    help="really delete old temp files")
     ap.add_argument("--once", action="store_true", help="send one sample and exit")
     a = ap.parse_args()
+    if a.command == "install":
+        sys.exit(install(a))
+    if a.command == "uninstall":
+        sys.exit(uninstall())
     agent = Agent(a.server, a.token, a.interval, a.allow_actions, a.kind, a.location, a.department)
     if a.once:
         if "key" not in agent.state:

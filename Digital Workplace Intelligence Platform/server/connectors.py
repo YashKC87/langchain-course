@@ -136,6 +136,13 @@ REGISTRY: list[Connector] = [
                                       "env": MicrosoftGraph.env + ["DWIP_LA_WORKSPACE_ID"],
                                       "capabilities": ["AVD connections", "Session host metrics", "FSLogix events"],
                                       "frequency": "Scheduled query (planned: 5 min)"})(),
+    type("azvm", (Connector,), {"id": "azure-vms", "name": "Azure virtual machines", "domain": "Virtual machines",
+                               "auth": "Entra ID app or Azure CLI (az login)", "env": [],
+                               "capabilities": ["Discover VMs", "Power state", "Push the DWIP agent (Run Command)"],
+                               "frequency": "On demand (Devices → Azure VMs)",
+                               "health": lambda self, db: {**Connector.health(self, db), "status": "configured",
+                                                           "note": "Open Devices → Azure VMs to list and onboard VMs. "
+                                                                   "Uses DWIP_ENTRA_* or the server's az login."}})(),
     ServiceNow(),
     _plain("sccm", "MECM / SCCM", "Endpoint management", "SQL or AdminService (Windows auth)",
            ["DWIP_SCCM_ADMINSERVICE_URL"], ["Deployments", "Software updates", "Collections"]),

@@ -27,6 +27,7 @@
     <a href="#integrations" class="nav" data-view="integrations"><span>🔌</span><b>Enterprise Integrations</b></a>
     <a href="#reports" class="nav" data-view="reports"><span>📈</span><b>Reports and Analytics</b></a>
     <a href="#governance" class="nav" data-view="governance"><span>🔐</span><b>Governance and Audit</b></a>
+    <a href="#help" class="nav help-nav" data-view="help"><span>📘</span><b>Help Guide</b></a>
     <div class="side-foot"><div class="live"><span class="pulse"></span><span id="live-text">Connecting…</span></div>
       <div class="muted small" id="ai-status">AI: checking…</div>
       <div class="muted small" id="who">…</div></div>
@@ -83,7 +84,8 @@
 
     <!-- ============ DEVICES ============ -->
     <section class="view" id="view-devices">
-      <header class="vhead"><h2>Devices</h2><p class="muted">Laptops, desktops, mobiles and virtual desktops (Citrix and AVD).</p></header>
+      <header class="vhead"><h2>Devices</h2><p class="muted">Laptops, desktops, mobiles, virtual desktops (Citrix and AVD) and Azure VMs.</p>
+        <div class="btns"><button class="btn go" id="add-dev">➕ Add devices</button><button class="btn ghost" id="az-open">☁️ Azure VMs</button></div></header>
       <div class="tabs" role="tablist">
         <button class="tab active" data-kind="">All</button>
         <button class="tab" data-kind="laptop">💻 Laptops</button>
@@ -286,6 +288,18 @@
         <aside class="card panel flow-inspect" id="fl-inspect"></aside>
       </div>
     </section>
+
+    <!-- ============ HELP ============ -->
+    <section class="view" id="view-help">
+      <header class="vhead"><h2>Help Guide</h2><p class="muted">How to use every part of DWIP. Search a topic or pick one on the left.</p></header>
+      <div class="help-layout">
+        <aside class="card panel help-side">
+          <input id="help-q" type="search" placeholder="Search help… e.g. flows, approval, token" autocomplete="off">
+          <div id="help-topics"></div>
+        </aside>
+        <article class="card panel help-body" id="help-body"></article>
+      </div>
+    </section>
   </main>
 
   <!-- drawer -->
@@ -311,11 +325,19 @@
     <form class="cp-input" id="cp-form"><input id="cp-q" placeholder="Ask about the fleet…" autocomplete="off"><button class="btn go">➤</button></form>
   </section>
 
+  <button class="bell" id="bell" aria-label="Device notifications"><span>🔔</span><i id="bell-n"></i></button>
+  <section class="bellbox card" id="bellbox" hidden>
+    <header><b>Device notifications</b><span class="muted small" id="bell-sub"></span><button class="btn ghost sm" id="bell-read">Mark all read</button></header>
+    <div class="bell-tabs"><button data-bk="" class="on">All</button><button data-bk="issue">Issues</button><button data-bk="alert">Alerts</button><button data-bk="offline">Offline</button><button data-bk="executed">Fixes</button></div>
+    <div id="bell-list"></div>
+  </section>
   <div class="toasts" id="toasts"></div>
   <form class="signin card" id="signin" hidden><h3>🔐 Sign in to DWIP</h3><p class="muted small">Enter your console access token.</p>
     <input type="password" id="signin-token" autocomplete="off" placeholder="Access token"><button class="btn go">Sign in</button></form>
   <script src="/static/app.js"></script>
   <script src="/static/intel.js"></script>
   <script src="/static/flows.js"></script>
+  <script src="/static/help.js"></script>
+  <script src="/static/ops.js"></script>
 </body>
 </html>

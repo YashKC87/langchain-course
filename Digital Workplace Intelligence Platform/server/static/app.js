@@ -342,7 +342,9 @@ async function openDrawer(id, keepOpen = false) {
       <button class="btn ghost" id="d-msg">💬 Message user</button>
       <select id="d-guide" class="btn ghost"><option value="">🧭 Send a guide…</option>${guideCache.map((g) => `<option value="${g.id}">${esc(g.icon)} ${esc(g.title)}</option>`).join("")}</select>
       <button class="btn ghost" id="d-ai">✨ Ask Copilot about this device</button>
-    </div>`;
+      <button class="btn go" id="d-remote">🖥️ Remote</button>
+    </div><div id="d-remote-box"></div>`;
+  $("#d-remote").onclick = () => openRemote(id);
   $("#d-ask").onclick = async () => {
     const r = await post(`/api/devices/${id}/survey`);
     toast(r.sent ? "📨 Survey sent to the user" : "⏳ Notification limit reached for this hour");

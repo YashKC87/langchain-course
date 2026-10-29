@@ -14,8 +14,8 @@ RANK = {r: i for i, r in enumerate(ROLES)}
 PERMISSIONS = {
     "viewer": "Read dashboards and ask AI Assist. Employee names are masked.",
     "analyst": "Viewer + acknowledge alerts, message employees, push guides and pulse surveys.",
-    "engineer": "Analyst + approve or reject remediation, build and run flows, read the audit log.",
-    "admin": "Engineer + change impact weights and connector settings.",
+    "engineer": "Analyst + approve fixes, run flows, remote access, push agents to Azure VMs, read the audit log.",
+    "admin": "Engineer + change impact weights and connector settings, remove demo data.",
 }
 # device-facing endpoints authenticate with the device key instead
 DEVICE_PATHS = ("/api/enroll", "/api/telemetry", "/api/agent/", "/api/ping")
@@ -47,6 +47,10 @@ def required_role(method: str, path: str) -> str:
     if path.startswith("/api/actions/"):
         return "engineer"
     if method != "GET" and path.startswith("/api/flows"):   # flows can queue remediation
+        return "engineer"
+    if path.startswith("/api/admin/"):
+        return "admin"
+    if "/remote" in path or (method != "GET" and path.startswith("/api/azure")):   # remote access, agent pushes
         return "engineer"
     if method != "GET" and path.startswith(("/api/impact/config", "/api/connectors")):
         return "admin"

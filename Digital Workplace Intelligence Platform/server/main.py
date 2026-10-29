@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analytics, brain, collab, flows, identity, intel
+from . import analytics, brain, collab, flows, identity, intel, ops
 from .ai import AI, rule_insight
 from .core import Ctx
 from .db import DB, DEFAULT_PATH
@@ -399,6 +399,7 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
     collab.register(app, ctx, summary)
     intel.register(app, ctx, "token" if tokens else "dev")
     flows.register(app, ctx)
+    ops.register(app, ctx, token)
 
     @app.websocket("/ws")
     async def ws(socket: WebSocket):
