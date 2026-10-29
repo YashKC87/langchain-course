@@ -62,9 +62,9 @@ async def subscription() -> str:
     return json.loads(out)["id"]
 
 
-async def list_vms(db) -> dict:
+async def list_vms(db, sub: str | None = None) -> dict:
     tok, method = await token()
-    sub = await subscription()
+    sub = sub or await subscription()
     base = f"{ARM}/subscriptions/{sub}/providers/Microsoft.Compute/virtualMachines?api-version={API}"
 
     async def pages(cl, url):

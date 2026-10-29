@@ -91,15 +91,25 @@ async function openAzure() {
   const body = $("#drawer-body");
   body.innerHTML = `<h2>☁️ Azure virtual machines</h2><div class="bubble ai typing"><i></i><i></i><i></i></div><p class="muted small">Reading your subscription…</p>`;
   openPanel();
+  const mon = await api("/api/azure/monitor");
+  const monHtml = `<div class="card remote-box"><h3>🔗 Connected subscription</h3>
+    <div class="sc-row"><label class="small grow2">Subscription ID<input id="az-sub" value="${esc(mon.subscription_id || "")}" placeholder="00000000-0000-0000-0000-000000000000"></label>
+      <label class="small">Every<select id="az-int">${[60, 300, 900].map((v) => `<option value="${v}"${v === mon.interval_s ? " selected" : ""}>${v / 60} min</option>`).join("")}</select></label>
+      <button class="btn go sm" id="az-connect">${mon.subscription_id ? "Save" : "Connect"}</button>
+      ${mon.subscription_id ? `<button class="btn ghost sm" id="az-collect">⟳ Collect now</button>` : ""}</div>
+    <p class="muted small">${mon.subscription_id ? `${mon.enabled ? "🟢 Collecting" : "⚪ Paused"} agentless telemetry (Azure Monitor) from the VMs in this subscription only.
+      ${mon.last_ok ? `Last collected ${ago(mon.last_ok)}.` : ""} ${mon.error ? `<span class="err">${esc(mon.error)}</span>` : ""}`
+      : "Connect one subscription: DWIP then reads CPU, memory, disk IOPS, network, availability and CPU credits for its VMs, with no agent needed."}</p></div>`;
   const r = await api("/api/azure/vms");
   if (!r.ok) {
     body.innerHTML = `<h2>☁️ Azure virtual machines</h2><p class="err">${esc(r.error)}</p>
       <p class="muted small">Either run <code>az login</code> on the DWIP server, or set DWIP_ENTRA_TENANT_ID, DWIP_ENTRA_CLIENT_ID, DWIP_ENTRA_CLIENT_SECRET
       and DWIP_AZURE_SUBSCRIPTION_ID. The identity needs Reader to list VMs and Virtual Machine Contributor to install the agent.</p>`;
+    body.insertAdjacentHTML("beforeend", monHtml); bindMonitor();
     return;
   }
   const server = `${location.protocol}//${location.host}`;
-  body.innerHTML = `<h2>☁️ Azure virtual machines</h2>
+  body.innerHTML = `<h2>☁️ Azure virtual machines</h2>${monHtml}
     <p class="muted small">Subscription ${esc(r.subscription)} · signed in with ${esc(r.auth)} · ${r.vms.length} VMs</p>
     <div class="table"><table><tr><th></th><th>VM</th><th>Region</th><th>Size</th><th>Power</th><th>DWIP</th></tr>
     ${r.vms.map((v) => `<tr><td>${v.device_id ? "" : `<input type="checkbox" class="az-pick" value="${esc(v.id)}"${v.power.includes("running") && v.os === "Windows" ? "" : " disabled"}>`}</td>
@@ -110,6 +120,7 @@ async function openAzure() {
     <p class="muted small">Azure Run Command downloads the agent from this address and installs it. A private address such as 192.168.x.x only works if the VMs reach your network (VPN, ExpressRoute) or DWIP runs in Azure.</p>
     <button class="btn go" id="az-deploy">Install agent on selected VMs</button><div id="az-res"></div>`;
   $$("[data-dev]", body).forEach((a) => a.onclick = (e) => { e.preventDefault(); openDrawer(a.dataset.dev); });
+  bindMonitor();
   $("#az-deploy").onclick = async () => {
     const ids = $$(".az-pick:checked", body).map((c) => c.value);
     if (!ids.length) return toast("Pick at least one running Windows VM");
@@ -117,6 +128,19 @@ async function openAzure() {
     const res = await post("/api/azure/vms/deploy", { resource_ids: ids, server_url: $("#az-server").value.trim() });
     $("#az-res").innerHTML = (res.results || []).map((x) => `<div class="ev ${x.accepted ? "fact" : "gap"}"><b>${esc(x.name || x.id)}</b> ${esc(x.detail)}</div>`).join("") ||
       `<p class="err">${esc(res.detail || "Failed")}</p>`;
+  };
+}
+
+function bindMonitor() {
+  $("#az-connect").onclick = async () => {
+    const r = await post("/api/azure/monitor", { subscription_id: $("#az-sub").value.trim(), enabled: true, interval_s: +$("#az-int").value });
+    if (!r.subscription_id) return toast(`❌ ${esc(r.detail || "Not saved")}`);
+    toast("🔗 Subscription connected. Collecting now…");
+    await post("/api/azure/monitor/collect"); openAzure();
+  };
+  if ($("#az-collect")) $("#az-collect").onclick = async () => {
+    const r = await post("/api/azure/monitor/collect");
+    toast(r.ok ? `⟳ Collected ${r.vms.length} VM(s)` : `❌ ${esc(r.detail || "Failed")}`); openAzure();
   };
 }
 

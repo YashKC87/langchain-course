@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analytics, brain, collab, flows, identity, intel, ops, scripts, thresholds
+from . import analytics, azmon, brain, collab, flows, identity, intel, ops, scripts, thresholds
 from .ai import AI, rule_insight
 from .core import Ctx
 from .db import DB, DEFAULT_PATH
@@ -176,7 +176,10 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
 
     @app.post("/api/telemetry")
     async def telemetry(t: Telemetry, x_device_key: str | None = Header(None)):
-        dev = ctx.device_by_key(x_device_key)
+        return await ingest(ctx.device_by_key(x_device_key), t)
+
+    async def ingest(dev: dict, t: Telemetry) -> dict:
+        """The N-DUDE-N pipeline for one sample, from an agent or an agentless collector (Azure Monitor)."""
         did, now, m = dev["id"], time.time(), t.metrics
         apps = [a.model_dump() for a in t.apps]
         if t.os_version:
@@ -403,6 +406,7 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
     intel.register(app, ctx, "token" if tokens else "dev")
     flows.register(app, ctx)
     ops.register(app, ctx, token)
+    azmon.register(app, ctx, ingest, Telemetry)
     scripts.register(app, ctx, bool(tokens))
     thresholds.register(app, ctx)
 

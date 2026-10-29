@@ -28,6 +28,9 @@ DEVICE_THRESHOLDS = {
     "patch_age_days": {"label": "Patch age", "unit": "days", "warn": PATCH_MAX_DAYS, "crit": 60, "max": 180},
     "session_latency_ms": {"label": "VDI session latency", "unit": "ms", "warn": 200, "crit": None, "max": 1000},
     "logon_seconds": {"label": "VDI logon time", "unit": "s", "warn": 60, "crit": None, "max": 300},
+    "os_disk_iops_pct": {"label": "OS disk IOPS used (Azure)", "unit": "%", "warn": 90, "crit": None, "max": 100},
+    "cpu_credits_remaining": {"label": "CPU credits left (Azure B-series)", "unit": "", "warn": 30, "crit": 5,
+                              "max": 600, "dir": "below"},
 }
 APP_THRESHOLDS = {
     "crashes_24h": {"label": "Crashes (24 h)", "unit": "", "warn": 3, "crit": None, "max": 50},
@@ -131,6 +134,18 @@ def evaluate(device: dict, m: dict, apps: list[dict] | None = None, th: dict | N
 
     if sev := hit("boot_seconds", "medium"):
         add("slow_boot", sev, "Slow startup", f"Boot took {_f(m, 'boot_seconds'):.0f}s", param="boot_seconds")
+
+    # ---------- Azure VM (platform metrics) ----------
+    avail = _f(m, "vm_availability")
+    if avail is not None and avail < 1:
+        add("vm_unavailable", "high", "VM unavailable", "Azure reports the VM as unavailable", param="vm_availability")
+    if sev := hit("os_disk_iops_pct", "medium"):
+        add("disk_iops_saturated", sev, "OS disk IOPS saturated",
+            f"OS disk at {_f(m, 'os_disk_iops_pct'):.0f}% of its IOPS limit", param="os_disk_iops_pct")
+    if sev := hit("cpu_credits_remaining", "medium"):
+        add("cpu_credits_low", sev, "CPU credits running out",
+            f"{_f(m, 'cpu_credits_remaining'):.0f} CPU credits left: the VM will be throttled to its baseline",
+            param="cpu_credits_remaining")
 
     # ---------- OS ----------
     if platform in MIN_OS:

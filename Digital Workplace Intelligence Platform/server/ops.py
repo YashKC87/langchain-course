@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, PlainTextResponse
 from pydantic import BaseModel
 
-from . import azure
+from . import azmon, azure
 from .core import ONLINE_WINDOW, Ctx
 
 DIST = os.path.join(os.path.dirname(__file__), "..", "dist")
@@ -66,8 +66,9 @@ def register(app: FastAPI, ctx: Ctx, enroll_token: str):
         if windows and dev["kind"] != "mobile":
             opts.append({"id": "rdp", "label": "Remote Desktop (RDP)", "target": ips[0] if ips else dev["hostname"],
                          "note": "Needs Remote Desktop enabled on the device and network reach (VPN/LAN) from your PC."})
-            opts.append({"id": "assist", "label": "Ask the user to share their screen (Quick Assist)",
-                         "note": "Sends the employee a notification; they open Quick Assist and give you the code."})
+            if m.get("source") != "azure-monitor":   # agentless VMs have no agent to deliver the request
+                opts.append({"id": "assist", "label": "Ask the user to share their screen (Quick Assist)",
+                             "note": "Sends the employee a notification; they open Quick Assist and give you the code."})
         if az and az.get("resourceId"):
             opts.append({"id": "bastion", "label": "Azure Bastion (browser)",
                          "url": f"https://portal.azure.com/#@/resource{az['resourceId']}/connect",
@@ -122,7 +123,7 @@ def register(app: FastAPI, ctx: Ctx, enroll_token: str):
     @app.get("/api/azure/vms")
     async def azure_vms():
         try:
-            return {"ok": True, **await azure.list_vms(db)}
+            return {"ok": True, **await azure.list_vms(db, azmon.load(db).get("subscription_id"))}
         except (RuntimeError, OSError) as e:
             return {"ok": False, "error": str(e), "vms": []}
 
@@ -130,7 +131,7 @@ def register(app: FastAPI, ctx: Ctx, enroll_token: str):
     async def azure_deploy(d: Deploy, request: Request):
         if not d.server_url.startswith(("http://", "https://")):
             raise HTTPException(400, "server_url must be the DWIP address the VMs can reach")
-        listing = await azure.list_vms(db)
+        listing = await azure.list_vms(db, azmon.load(db).get("subscription_id"))
         by_id = {v["id"].lower(): v for v in listing["vms"]}
         results = []
         for rid in d.resource_ids[:20]:               # batch limit
