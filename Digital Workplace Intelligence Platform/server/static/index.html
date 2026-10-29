@@ -19,10 +19,12 @@
     <a href="#collab" class="nav sub" data-view="collab"><span>💬</span><b>Conversations</b><i class="count" id="n-unread"></i></a>
     <a href="#guides" class="nav sub" data-view="guides"><span>🧭</span><b>In-app guidance</b></a>
     <a href="#alerts" class="nav" data-view="alerts"><span>🚨</span><b>Proactive Monitoring</b><i class="count" id="n-alerts"></i></a>
+    <a href="#thresholds" class="nav sub" data-view="thresholds"><span>🎚️</span><b>Thresholds</b></a>
     <a href="#rca" class="nav" data-view="rca"><span>🧬</span><b>AI Root Cause Analysis</b></a>
     <a href="#predict" class="nav" data-view="predict"><span>🔮</span><b>Predictive Intelligence</b></a>
     <a href="#remediation" class="nav" data-view="remediation"><span>🛠️</span><b>Intelligent Remediation</b><i class="count" id="n-appr"></i></a>
     <a href="#flows" class="nav sub" data-view="flows"><span>🔀</span><b>Flows</b></a>
+    <a href="#scripts" class="nav sub" data-view="scripts"><span>📜</span><b>Scripts</b><i class="count" id="n-sruns"></i></a>
     <a href="#assist" class="nav" data-view="assist"><span>✨</span><b>AI Assist</b></a>
     <a href="#integrations" class="nav" data-view="integrations"><span>🔌</span><b>Enterprise Integrations</b></a>
     <a href="#reports" class="nav" data-view="reports"><span>📈</span><b>Reports and Analytics</b></a>
@@ -271,7 +273,7 @@
             <span class="muted small">Add:</span>
             <button data-add="condition">◇ Condition</button><button data-add="action">⚙️ Remote action</button>
             <button data-add="notify_user">💬 Notify employee</button><button data-add="notify_it">📣 Notify IT</button>
-            <button data-add="guide">🧭 Guide</button><button data-add="service_api">☁️ Service/API</button><button data-add="end">⏹ End</button>
+            <button data-add="guide">🧭 Guide</button><button data-add="service_api">☁️ Service/API</button><button data-add="script">📜 Run script</button><button data-add="end">⏹ End</button>
             <span class="grow"></span><button class="btn go sm" id="fl-save">Save</button>
           </div>
           <div class="canvas-wrap card" id="fl-wrap"><div class="canvas" id="fl-canvas"><svg id="fl-svg"></svg></div>
@@ -286,6 +288,47 @@
           <div class="card panel"><h3>🧾 Run history</h3><div id="fl-runs" class="stack"></div></div>
         </div>
         <aside class="card panel flow-inspect" id="fl-inspect"></aside>
+      </div>
+    </section>
+
+    <!-- ============ THRESHOLDS ============ -->
+    <section class="view" id="view-thresholds">
+      <header class="vhead"><h2>Alert thresholds</h2><p class="muted">Set when each parameter alerts. <b>Warning</b> opens an issue, <b>Critical</b> raises it to high severity, and <b>Sustained</b> waits until the value stays past the line that long. The bar shows where your devices are now.</p></header>
+      <div class="card th-scope">
+        <label class="small">Apply to <select id="th-scope"></select></label>
+        <span class="muted small" id="th-note"></span><span class="grow"></span>
+        <button class="btn no sm" id="th-reset">Reset this scope</button><button class="btn go sm" id="th-save">Save thresholds</button>
+      </div>
+      <div id="th-list" class="th-grid"></div>
+    </section>
+
+    <!-- ============ SCRIPTS ============ -->
+    <section class="view" id="view-scripts">
+      <header class="vhead"><h2>Script library</h2><p class="muted">PowerShell, Python, Batch and JavaScript for device and application management. A script runs only after an engineer approves that exact version, and devices run scripts only if their agent allows it.</p></header>
+      <div class="sc-layout">
+        <aside class="card panel"><h3>📜 Scripts <button class="btn ghost sm" id="sc-new">＋ New</button></h3><div id="sc-list" class="stack"></div>
+          <h3 style="margin-top:16px">🛡️ Runs waiting for approval</h3><div id="sc-pending" class="stack"></div></aside>
+        <div class="sc-main">
+          <form class="card panel form" id="sc-form">
+            <div class="sc-row"><label class="small">Name<input name="name" required maxlength="120"></label>
+              <label class="small">Language<select name="language"></select></label>
+              <label class="small">Risk<select name="risk"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High (approve every run)</option></select></label></div>
+            <div class="sc-row"><label class="small">Manages<select name="target"><option value="device">Device settings</option><option value="app">An application</option></select></label>
+              <label class="small" id="sc-app-wrap">Application<select name="app"></select></label>
+              <label class="small grow2">Description<input name="description" maxlength="300"></label></div>
+            <label class="small">Script<textarea name="body" rows="12" spellcheck="false" class="mono" required></textarea></label>
+            <div class="sc-row sc-status"><span id="sc-status"></span><span class="grow"></span>
+              <button type="button" class="btn no sm" id="sc-reject">Reject</button><button type="button" class="btn ghost sm" id="sc-approve">✔ Approve this version</button>
+              <button class="btn go sm">Save (new version)</button></div>
+          </form>
+          <div class="card panel"><h3>▶ Run</h3>
+            <div class="sc-row"><label class="small">Target<select id="sc-scope"><option value="device">One device</option><option value="kind">Device type</option><option value="location">Location</option><option value="app">Devices running an app</option></select></label>
+              <label class="small grow2">Which<select id="sc-which"></select></label>
+              <label class="small check"><input type="checkbox" id="sc-dry" checked> Dry run</label>
+              <button class="btn go sm" id="sc-run">▶ Run</button></div>
+            <p class="muted small" id="sc-runmsg"></p>
+            <h3 style="margin-top:12px">🧾 Run history</h3><div id="sc-runs" class="table"></div></div>
+        </div>
       </div>
     </section>
 
@@ -339,5 +382,6 @@
   <script src="/static/flows.js"></script>
   <script src="/static/help.js"></script>
   <script src="/static/ops.js"></script>
+  <script src="/static/manage.js"></script>
 </body>
 </html>

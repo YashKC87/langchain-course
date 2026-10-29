@@ -90,6 +90,16 @@ CREATE TABLE IF NOT EXISTS flows(
 CREATE TABLE IF NOT EXISTS flow_runs(
     id INTEGER PRIMARY KEY AUTOINCREMENT, flow_id INTEGER, flow_version INTEGER, device_id TEXT, trigger TEXT,
     dry_run INTEGER, status TEXT, started_at REAL, finished_at REAL, steps TEXT, actor TEXT);
+
+-- script library (device and application management)
+CREATE TABLE IF NOT EXISTS scripts(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT, language TEXT, target TEXT, app TEXT,
+    risk TEXT, body TEXT, sha256 TEXT, version INTEGER, status TEXT, created_by TEXT, approved_by TEXT,
+    approved_at REAL, updated_at REAL);
+CREATE TABLE IF NOT EXISTS script_runs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, script_id INTEGER, version INTEGER, sha256 TEXT, device_id TEXT,
+    status TEXT, dry_run INTEGER, requested_by TEXT, approved_by TEXT, source TEXT, output TEXT, exit_code INTEGER,
+    created_at REAL, updated_at REAL);
 """
 
 INDEXES = """
@@ -105,6 +115,7 @@ CREATE INDEX IF NOT EXISTS ix_surveys ON surveys(device_id, ts);
 CREATE INDEX IF NOT EXISTS ix_audit ON audit(ts);
 CREATE INDEX IF NOT EXISTS ix_rollups ON rollups(bucket);
 CREATE INDEX IF NOT EXISTS ix_flow_runs ON flow_runs(flow_id, started_at);
+CREATE INDEX IF NOT EXISTS ix_script_runs ON script_runs(device_id, status);
 """
 
 # columns added after the first release; applied idempotently to existing databases

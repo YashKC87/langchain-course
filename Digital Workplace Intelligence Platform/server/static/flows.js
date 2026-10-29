@@ -4,7 +4,7 @@
 const FL = { meta: null, flow: null, sel: null, dragging: null, linking: null, runs: [] };
 const NODE_W = 230;
 const NODE_ICON = { start: "▶", condition: "◇", action: "⚙️", notify_user: "💬", notify_it: "📣", guide: "🧭",
-  service_api: "☁️", end: "⏹" };
+  service_api: "☁️", script: "📜", end: "⏹" };
 const flCanvas = () => $("#fl-canvas");
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -16,6 +16,7 @@ function nodeSummary(n) {
     case "action": return c.action ? `${c.action}${c.target ? ` (${c.target})` : ""} · ${FL.meta.actions.find((a) => a.action === c.action)?.risk || ""} risk` : "Pick an approved action";
     case "notify_user": case "notify_it": return c.message || "Write a message";
     case "guide": return FL.meta.guides.find((g) => g.id == c.guide_id)?.title || "Pick a guide";
+    case "script": { const sc = FL.meta.scripts.find((x) => x.id == c.script_id); return sc ? `${sc.name} (${sc.language}, ${sc.risk} risk)` : "Pick an approved script"; }
     case "service_api": return c.url ? `${c.method || "GET"} ${c.url}` : "Set the URL";
     case "end": return c.outcome || "";
   }
@@ -180,6 +181,8 @@ function inspect() {
       <label class="small">Headers (JSON, secrets as {{secret.NAME}})<textarea name="headers" rows="2">${esc(JSON.stringify(c.headers || {}))}</textarea></label>
       <label class="small">Body<textarea name="body" rows="2">${esc(c.body || "")}</textarea></label>
       <p class="muted small">Allowed hosts: ${FL.meta.allowed_hosts.length ? FL.meta.allowed_hosts.map(esc).join(", ") : "none. Set DWIP_FLOW_ALLOWED_HOSTS."} The response is available to later nodes as {{steps.${esc(n.id)}.json…}}.</p>`,
+    script: `<label class="small">Approved script<select name="script_id"><option value="">Choose…</option>${opt(FL.meta.scripts, c.script_id, (x) => `${x.name} (${x.language}, ${x.risk} risk)`, (x) => x.id)}</select></label>
+      <p class="muted small">Only approved script versions are listed. High-risk scripts still wait for approval on each run; the device's agent must allow scripts.</p>`,
     end: `<label class="small">Outcome<input name="outcome" value="${esc(c.outcome || "")}"></label>`,
     start: `<p class="muted small">Set the trigger in Flow settings (click empty canvas).</p>`,
   }[n.type];

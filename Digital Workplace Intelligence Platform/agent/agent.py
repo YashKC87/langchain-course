@@ -13,6 +13,7 @@ Packaged as dwip-agent.exe it also installs itself as a startup service (run as 
 """
 import argparse
 import ctypes
+import hashlib
 import json
 import os
 import platform
@@ -64,13 +65,14 @@ $age = if ($hf) { [int]((Get-Date) - $hf.InstalledOn).TotalDays } else { $null }
 
 class Agent:
     def __init__(self, server: str, token: str, interval: int, allow_actions: bool, kind: str | None,
-                 location: str | None = None, department: str | None = None):
+                 location: str | None = None, department: str | None = None, allow_scripts: bool = False):
         self.server = server.rstrip("/")
         self.token = token
         self.interval = interval
         self.allow_actions = allow_actions
         self.kind = kind
         self.location, self.department = location, department
+        self.allow_scripts = allow_scripts
         self.http = httpx.Client(timeout=10)
         self.state = self._load_state()
         self._os_cache: tuple[float, dict] = (0.0, {})
@@ -341,8 +343,51 @@ class Agent:
             print(f"[dwip]   -> {'ok' if ok else 'FAILED'}: {out}")
             self.http.post(f"{self.server}/api/agent/actions/{a['id']}/result",
                            json={"ok": ok, "output": out}, headers=self.headers)
+        for sc in data.get("scripts", []):
+            st, code, out = self.run_script(sc)
+            print(f"[dwip] script '{sc['name']}' v{sc['version']}: {st}", flush=True)
+            self.http.post(f"{self.server}/api/agent/scripts/{sc['id']}/result",
+                           json={"status": st, "exit_code": code, "output": out}, headers=self.headers)
         for n in data["notifications"]:
             print(f"\n  🔔 DWIP: {n['message']}\n", flush=True)
+
+    # ---------- approved scripts ----------
+    INTERPRETERS = {
+        "powershell": lambda f: ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", f],
+        "batch": lambda f: ["cmd.exe", "/c", f],
+        "python": lambda f: [shutil.which("python") or shutil.which("python3") or "python", f],
+        "javascript": lambda f: [shutil.which("node") or "node", f],
+    }
+    EXT = {"powershell": ".ps1", "batch": ".cmd", "python": ".py", "javascript": ".js"}
+
+    def run_script(self, sc: dict) -> tuple[str, int | None, str]:
+        """Run one approved script. Refuses when scripts are off here or the body doesn't match its approved hash."""
+        if not self.allow_scripts:
+            return "refused", None, "Scripts are disabled on this device (agent not started with --allow-scripts)."
+        if hashlib.sha256(sc["body"].encode("utf-8")).hexdigest() != sc["sha256"]:
+            return "refused", None, "Integrity check failed: script body doesn't match the approved version."
+        lang = sc["language"]
+        if lang not in self.INTERPRETERS:
+            return "refused", None, f"Unsupported language {lang}"
+        if lang in ("powershell", "batch") and platform.system() != "Windows":
+            return "refused", None, f"{lang} needs Windows"
+        fd, path = tempfile.mkstemp(suffix=self.EXT[lang], prefix="dwip-")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(sc["body"])
+            r = subprocess.run(self.INTERPRETERS[lang](path), capture_output=True, text=True,
+                               timeout=sc.get("timeout", 120), encoding="utf-8", errors="replace")
+            out = (r.stdout or "") + (("\n[stderr]\n" + r.stderr) if r.stderr else "")
+            return ("done" if r.returncode == 0 else "failed"), r.returncode, out[-8000:]
+        except FileNotFoundError:
+            return "failed", None, f"{lang} interpreter not installed on this device"
+        except subprocess.TimeoutExpired:
+            return "failed", None, f"Timed out after {sc.get('timeout', 120)} s"
+        finally:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
 
     # ---------- loop ----------
     def run(self):
@@ -381,7 +426,8 @@ def install(a) -> int:
         subprocess.run(["schtasks", "/End", "/TN", TASK_NAME], capture_output=True)
         shutil.copy2(sys.executable, exe)
     cfg = {"server": a.server, "token": a.token, "interval": a.interval, "location": a.location,
-           "department": a.department, "kind": a.kind, "allow_actions": a.allow_actions}
+           "department": a.department, "kind": a.kind, "allow_actions": a.allow_actions,
+           "allow_scripts": a.allow_scripts}
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
     target = f'"{exe}" run' if FROZEN else f'"{sys.executable}" "{os.path.abspath(__file__)}" run'
@@ -427,13 +473,15 @@ def main():
                     help="override auto-detection")
     ap.add_argument("--allow-actions", action="store_true", default=cfg.get("allow_actions", False),
                     help="really delete old temp files")
+    ap.add_argument("--allow-scripts", action="store_true", default=cfg.get("allow_scripts", False),
+                    help="run scripts that IT approved in the DWIP script library")
     ap.add_argument("--once", action="store_true", help="send one sample and exit")
     a = ap.parse_args()
     if a.command == "install":
         sys.exit(install(a))
     if a.command == "uninstall":
         sys.exit(uninstall())
-    agent = Agent(a.server, a.token, a.interval, a.allow_actions, a.kind, a.location, a.department)
+    agent = Agent(a.server, a.token, a.interval, a.allow_actions, a.kind, a.location, a.department, a.allow_scripts)
     if a.once:
         if "key" not in agent.state:
             agent.enroll()

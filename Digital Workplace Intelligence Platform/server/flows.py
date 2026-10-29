@@ -29,6 +29,7 @@ NODE_TYPES = {
     "notify_it": {"label": "Notify IT", "ports": ["out"]},
     "guide": {"label": "Send guide", "ports": ["out"]},
     "service_api": {"label": "Service/API", "ports": ["out"]},
+    "script": {"label": "Run script", "ports": ["out"]},
     "end": {"label": "End state", "ports": []},
 }
 OPS = ["equals", "not_equals", "greater_than", "less_than", "contains", "starts_with", "is_set", "is_empty"]
@@ -74,6 +75,8 @@ def validate(graph: dict, trigger: dict) -> list[str]:
             errs.append(f"Node '{n.get('title') or n['id']}': pick an action from the approved catalogue")
         if n.get("type") == "condition" and (not c.get("field") or c.get("op") not in OPS):
             errs.append(f"Node '{n.get('title') or n['id']}': condition needs a field and an operator")
+        if n.get("type") == "script" and not c.get("script_id"):
+            errs.append(f"Node '{n.get('title') or n['id']}': pick an approved script")
         if n.get("type") == "service_api" and not str(c.get("url", "")).startswith(("https://", "http://")):
             errs.append(f"Node '{n.get('title') or n['id']}': Service/API needs a URL")
     seen = set()
@@ -213,6 +216,17 @@ async def run_flow(ctx: Ctx, flow: dict, device: dict | None, dry_run: bool, ext
                 st["result"] = f"Would send guide '{g['title']}'" if dry_run else (
                     "Guide sent" if await ctx.deliver_guide(g, device["id"], f"flow: {flow['name']}")
                     else "Skipped: already sent today")
+            elif node["type"] == "script":
+                s = db.one("SELECT * FROM scripts WHERE id=?", (c.get("script_id"),))
+                if not s or s["status"] != "approved":
+                    raise ValueError("script missing or not approved")
+                if not device:
+                    raise ValueError("needs a device")
+                r = await ctx.queue_script(s, device, dry_run, actor, f"flow: {flow['name']}")
+                vars_["steps"][node["id"]] = r
+                if r["status"] == "skipped":
+                    raise ValueError(r["detail"])
+                st["result"] = r["detail"] or f"'{s['name']}' {r['status'].replace('_', ' ')} (run #{r['run_id']})"
             elif node["type"] == "service_api":
                 url = render(c.get("url", ""), vars_)
                 method = (c.get("method") or "GET").upper()
@@ -345,6 +359,7 @@ def register(app: FastAPI, ctx: Ctx):
         return {"node_types": NODE_TYPES, "ops": OPS, "fields": FIELDS, "triggers": TRIGGERS,
                 "actions": [{"action": k, "risk": v[0]} for k, v in brain.ACTIONS.items()],
                 "guides": db.q("SELECT id, title, icon FROM guides WHERE active=1"),
+                "scripts": db.q("SELECT id, name, language, risk FROM scripts WHERE status='approved'"),
                 "allowed_hosts": [h for h in os.environ.get("DWIP_FLOW_ALLOWED_HOSTS", "").split(",") if h],
                 "teams_webhook": bool(os.environ.get("DWIP_TEAMS_WEBHOOK"))}
 

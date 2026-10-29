@@ -15,7 +15,7 @@ DIST = os.path.join(os.path.dirname(__file__), "..", "dist")
 # events that belong in the monitored-device notification box
 INBOX_KINDS = ("issue", "alert", "executed", "failed", "resolved", "enroll", "offline", "online", "conversation")
 DEVICE_TABLES = ("telemetry", "issues", "actions", "notifications", "surveys", "events", "apps_current",
-                 "app_samples", "alerts", "guide_deliveries", "rollups", "flow_runs")
+                 "app_samples", "alerts", "guide_deliveries", "rollups", "flow_runs", "script_runs")
 
 
 class Deploy(BaseModel):

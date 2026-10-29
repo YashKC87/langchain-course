@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analytics, brain, collab, flows, identity, intel, ops
+from . import analytics, brain, collab, flows, identity, intel, ops, scripts, thresholds
 from .ai import AI, rule_insight
 from .core import Ctx
 from .db import DB, DEFAULT_PATH
@@ -195,7 +195,10 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
             db.prune(now)
 
         # Notice + Discover
-        findings = brain.evaluate(dev, m, apps)
+        th_cfg = thresholds.load(db)
+        dev_th = thresholds.device_th(th_cfg, dev["kind"])
+        findings = [f for f in brain.evaluate(dev, m, apps, dev_th, thresholds.app_th(th_cfg))
+                    if thresholds.sustained(db, did, f, dev_th, now)]
         # Understand history: sentiment from past surveys and the device's own baseline
         scores = brain.score(m, ctx.sentiment(did), apps)
         anom = analytics.anomaly(db, did, scores["dex"])
@@ -260,7 +263,7 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
         for n in notes:
             db.x("UPDATE notifications SET delivered=1 WHERE id=?", (n["id"],))
             n["payload"] = json.loads(n["payload"] or "{}")
-        return {"actions": acts, "notifications": notes}
+        return {"actions": acts, "notifications": notes, "scripts": ctx.pull_scripts(dev["id"])}
 
     @app.post("/api/agent/actions/{action_id}/result")
     async def action_result(action_id: int, r: ActionResult, x_device_key: str | None = Header(None)):
@@ -400,6 +403,8 @@ def create_app(db_path: str = DEFAULT_PATH, enroll_token: str | None = None,
     intel.register(app, ctx, "token" if tokens else "dev")
     flows.register(app, ctx)
     ops.register(app, ctx, token)
+    scripts.register(app, ctx, bool(tokens))
+    thresholds.register(app, ctx)
 
     @app.websocket("/ws")
     async def ws(socket: WebSocket):

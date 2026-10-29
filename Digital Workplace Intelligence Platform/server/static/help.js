@@ -128,6 +128,19 @@ const HELP = [
       <li><b>Quick Assist:</b> sends the employee a request; they press Win+Ctrl+Q and share the code with you.</li>
       <li><b>Azure Bastion:</b> for Azure VMs, opens the VM's connect page in the Azure portal.</li></ul>
     <p>Phones have no remote option. Engineers and admins only; every request is audited.</p>` },
+  { id: "thresholds", title: "Alert thresholds (meters)", go: "thresholds", tags: "threshold meter saturation warning critical sustained alert level parameter app", body: `
+    <p><a href="#thresholds">Proactive Monitoring → Thresholds</a> has a meter for every parameter. Green is normal, amber is past <b>Warning</b> (opens an issue), red is past <b>Critical</b> (high severity). The dark band shows where your devices are now.</p>
+    <ol><li>Pick a scope: All devices, a device type (overrides global), All applications, or one app (overrides the app defaults).</li>
+      <li>Drag the Warning and Critical sliders. <i>No critical</i> removes the critical level.</li>
+      <li>Optional <b>Sustained</b>: minutes the value must stay past the line (CPU, memory, disk, battery), so short spikes don't alert.</li>
+      <li><b>Save thresholds</b>. Each device uses them from its next report, so open issues clear or open on their own. <i>Reset this scope</i> goes back to the defaults.</li></ol>
+    <p>Battery charge and battery health alert when they go <i>below</i> the line. Changes need the engineer role and are audited.</p>` },
+  { id: "scripts", title: "Script library (PowerShell, Python, Batch, JavaScript)", go: "scripts", tags: "script powershell python batch javascript node query run device management app approve sha", body: `
+    <ol><li>Open <a href="#scripts">Intelligent Remediation → Scripts</a>, click <b>＋ New</b>, pick the <b>Language</b> from the dropdown, choose whether it manages device settings or an application, set the risk and write the script.</li>
+      <li><b>Save</b> creates a new version in <i>Draft</i>. Another engineer reads it and clicks <b>Approve this version</b>. (With sign-in on, you can't approve your own script.)</li>
+      <li>Under <b>Run</b>, target one device, a device type, a location, or every device running an app. Keep <b>Dry run</b> ticked to preview, then run for real.</li>
+      <li>High-risk scripts wait in <i>Runs waiting for approval</i> each time. Results, exit code and output appear in Run history; click a row to see the output.</li></ol>
+    <p><b>On the device:</b> the agent runs scripts only when installed with <code>--allow-scripts</code>, checks the SHA-256 against the approved version, and stops a script after 120 s. PowerShell and Batch need Windows; Python and JavaScript need Python or Node.js installed. Phones never run scripts. Editing a script creates a new version that needs approval again. Flows can run approved scripts with the <i>Run script</i> step.</p>` },
   { id: "trouble", title: "Troubleshooting", tags: "problem error slow unicode offline fix faq", body: `
     <table><tr><th>Symptom</th><th>Fix</th></tr>
       <tr><td>Every request takes about 2 s</td><td>Use 127.0.0.1, not localhost</td></tr>

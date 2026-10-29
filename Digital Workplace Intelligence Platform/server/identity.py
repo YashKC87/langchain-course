@@ -48,6 +48,8 @@ def required_role(method: str, path: str) -> str:
         return "engineer"
     if method != "GET" and path.startswith("/api/flows"):   # flows can queue remediation
         return "engineer"
+    if method != "GET" and path.startswith(("/api/scripts", "/api/script-runs", "/api/thresholds")):
+        return "engineer"
     if path.startswith("/api/admin/"):
         return "admin"
     if "/remote" in path or (method != "GET" and path.startswith("/api/azure")):   # remote access, agent pushes

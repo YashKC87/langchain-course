@@ -11,6 +11,44 @@ App findings carry the app name in `target` and in the issue type (e.g. app_cras
 MIN_OS = {"ios": 17, "android": 13}
 PATCH_MAX_DAYS = 30
 
+# Alert thresholds people can change (Proactive Monitoring -> Thresholds). warn opens an issue at the rule's
+# normal severity; crit (optional) raises it to high. "below" parameters alert when the value drops under.
+# sustain_min > 0 means the value must stay past the threshold that long (checked against stored samples).
+DEVICE_THRESHOLDS = {
+    "cpu_pct": {"label": "CPU", "unit": "%", "warn": 90, "crit": None, "max": 100},
+    "mem_pct": {"label": "Memory", "unit": "%", "warn": 92, "crit": None, "max": 100},
+    "disk_pct": {"label": "Disk used", "unit": "%", "warn": 90, "crit": 95, "max": 100},
+    "battery_pct": {"label": "Battery charge", "unit": "%", "warn": 15, "crit": None, "max": 100, "dir": "below"},
+    "battery_health_pct": {"label": "Battery health", "unit": "%", "warn": 70, "crit": None, "max": 100, "dir": "below"},
+    "network_latency_ms": {"label": "Network latency", "unit": "ms", "warn": 300, "crit": None, "max": 2000},
+    "boot_seconds": {"label": "Boot time", "unit": "s", "warn": 120, "crit": None, "max": 600},
+    "uptime_hours": {"label": "Uptime without restart", "unit": "h", "warn": 168, "crit": None, "max": 1000},
+    "crashes_24h": {"label": "App crashes (device, 24 h)", "unit": "", "warn": 3, "crit": None, "max": 50},
+    "os_errors_24h": {"label": "OS errors (24 h)", "unit": "", "warn": 20, "crit": None, "max": 200},
+    "patch_age_days": {"label": "Patch age", "unit": "days", "warn": PATCH_MAX_DAYS, "crit": 60, "max": 180},
+    "session_latency_ms": {"label": "VDI session latency", "unit": "ms", "warn": 200, "crit": None, "max": 1000},
+    "logon_seconds": {"label": "VDI logon time", "unit": "s", "warn": 60, "crit": None, "max": 300},
+}
+APP_THRESHOLDS = {
+    "crashes_24h": {"label": "Crashes (24 h)", "unit": "", "warn": 3, "crit": None, "max": 50},
+    "hangs_24h": {"label": "Hangs (24 h)", "unit": "", "warn": 5, "crit": None, "max": 50},
+    "latency_ms": {"label": "Response time", "unit": "ms", "warn": 1500, "crit": None, "max": 10000},
+    "mem_mb": {"label": "Memory", "unit": "MB", "warn": 2500, "crit": None, "max": 8000},
+    "cpu_pct": {"label": "CPU", "unit": "%", "warn": 80, "crit": None, "max": 100},
+}
+
+
+def level(th: dict, key: str, v: float | None) -> str | None:
+    """'warn', 'crit' or None for value v against threshold th[key]."""
+    t = th.get(key)
+    if v is None or not t or t.get("warn") is None:
+        return None
+    below = t.get("dir") == "below"
+    past = (lambda x: v <= x) if below else (lambda x: v >= x)
+    if t.get("crit") is not None and past(t["crit"]):
+        return "crit"
+    return "warn" if past(t["warn"]) else None
+
 # action -> (risk, friendly message sent to the user once it succeeds)
 ACTIONS = {
     "clean_temp": ("low", "We cleared temporary files and freed up space for you. 🧹"),
@@ -39,57 +77,60 @@ def _major(version: str | None) -> int | None:
         return None
 
 
-def evaluate(device: dict, m: dict, apps: list[dict] | None = None) -> list[dict]:
-    """Return a list of findings for one telemetry sample."""
+def evaluate(device: dict, m: dict, apps: list[dict] | None = None, th: dict | None = None,
+             app_th=None) -> list[dict]:
+    """Return a list of findings for one telemetry sample.
+    th = device thresholds (defaults DEVICE_THRESHOLDS); app_th(name) -> that app's thresholds."""
     out = []
+    th = th or DEVICE_THRESHOLDS
+    app_th = app_th or (lambda name: APP_THRESHOLDS)
     kind = device.get("kind")
     platform = (device.get("platform") or "").lower()
     managed = kind in ("laptop", "desktop", "vdi")   # can run scripted fixes
 
-    def add(type_, severity, title, detail, action=None, target=None):
+    def add(type_, severity, title, detail, action=None, target=None, param=None):
         risk = ACTIONS[action][0] if action else "advise"
         out.append({"type": type_, "severity": severity, "title": title, "detail": detail,
-                    "action": action, "risk": risk, "target": target})
+                    "action": action, "risk": risk, "target": target, "param": param})
+
+    def hit(key, warn_sev):
+        """Severity if metric `key` is past its threshold, else None."""
+        lv = level(th, key, _f(m, key))
+        return None if lv is None else ("high" if lv == "crit" else warn_sev)
 
     # ---------- device ----------
-    disk = _f(m, "disk_pct")
-    if disk is not None and disk >= 90:
-        add("disk_full", "high" if disk >= 95 else "medium",
-            "Storage almost full", f"Storage at {disk:.0f}% used", "clean_temp" if managed else None)
+    if sev := hit("disk_pct", "medium"):
+        add("disk_full", sev, "Storage almost full", f"Storage at {_f(m, 'disk_pct'):.0f}% used",
+            "clean_temp" if managed else None, param="disk_pct")
 
-    cpu = _f(m, "cpu_pct")
-    if cpu is not None and cpu >= 90 and managed:
-        add("high_cpu", "medium", "CPU saturated", f"CPU at {cpu:.0f}%", "top_processes")
+    if (sev := hit("cpu_pct", "medium")) and managed:
+        add("high_cpu", sev, "CPU saturated", f"CPU at {_f(m, 'cpu_pct'):.0f}%", "top_processes", param="cpu_pct")
 
-    mem = _f(m, "mem_pct")
-    if mem is not None and mem >= 92:
-        add("high_memory", "medium", "Memory pressure", f"Memory at {mem:.0f}%")
+    if sev := hit("mem_pct", "medium"):
+        add("high_memory", sev, "Memory pressure", f"Memory at {_f(m, 'mem_pct'):.0f}%", param="mem_pct")
 
-    crashes = _f(m, "crashes_24h")
-    if crashes is not None and crashes >= 3:
-        add("crash_loop", "high", "Apps keep crashing", f"{crashes:.0f} app crashes in 24h")
+    if sev := hit("crashes_24h", "high"):
+        add("crash_loop", sev, "Apps keep crashing", f"{_f(m, 'crashes_24h'):.0f} app crashes in 24h",
+            param="crashes_24h")
 
-    uptime = _f(m, "uptime_hours")
-    if uptime is not None and uptime >= 168 and kind in ("laptop", "desktop"):
-        add("pending_reboot", "low", "Not restarted in a week",
-            f"Up for {uptime / 24:.0f} days", "schedule_reboot")
+    if (sev := hit("uptime_hours", "low")) and kind in ("laptop", "desktop"):
+        add("pending_reboot", sev, "Not restarted in a while",
+            f"Up for {_f(m, 'uptime_hours') / 24:.0f} days", "schedule_reboot", param="uptime_hours")
 
-    batt = _f(m, "battery_pct")
-    if batt is not None and batt <= 15 and not m.get("battery_plugged"):
-        add("low_battery", "low", "Battery low", f"Battery at {batt:.0f}% and unplugged")
+    if (sev := hit("battery_pct", "low")) and not m.get("battery_plugged"):
+        add("low_battery", sev, "Battery low", f"Battery at {_f(m, 'battery_pct'):.0f}% and unplugged",
+            param="battery_pct")
 
-    health = _f(m, "battery_health_pct")
-    if health is not None and health < 70:
-        add("battery_worn", "medium", "Battery worn out",
-            f"Battery health {health:.0f}% — consider replacement")
+    if sev := hit("battery_health_pct", "medium"):
+        add("battery_worn", sev, "Battery worn out",
+            f"Battery health {_f(m, 'battery_health_pct'):.0f}% — consider replacement", param="battery_health_pct")
 
-    latency = _f(m, "network_latency_ms")
-    if latency is not None and latency >= 300:
-        add("slow_network", "medium", "Slow network", f"Latency {latency:.0f} ms")
+    if sev := hit("network_latency_ms", "medium"):
+        add("slow_network", sev, "Slow network", f"Latency {_f(m, 'network_latency_ms'):.0f} ms",
+            param="network_latency_ms")
 
-    boot = _f(m, "boot_seconds")
-    if boot is not None and boot >= 120:
-        add("slow_boot", "medium", "Slow startup", f"Boot took {boot:.0f}s")
+    if sev := hit("boot_seconds", "medium"):
+        add("slow_boot", sev, "Slow startup", f"Boot took {_f(m, 'boot_seconds'):.0f}s", param="boot_seconds")
 
     # ---------- OS ----------
     if platform in MIN_OS:
@@ -98,39 +139,48 @@ def evaluate(device: dict, m: dict, apps: list[dict] | None = None) -> list[dict
             add("os_outdated", "high", "OS out of date",
                 f"{platform} {device.get('os_version')} is below {MIN_OS[platform]}")
 
-    patch = _f(m, "patch_age_days")
-    if patch is not None and patch >= PATCH_MAX_DAYS:
-        add("os_patch_overdue", "high" if patch >= 60 else "medium", "Security patches overdue",
-            f"Last OS update {patch:.0f} days ago", "install_updates" if managed else None)
+    if sev := hit("patch_age_days", "medium"):
+        add("os_patch_overdue", sev, "Security patches overdue",
+            f"Last OS update {_f(m, 'patch_age_days'):.0f} days ago", "install_updates" if managed else None,
+            param="patch_age_days")
 
-    os_err = _f(m, "os_errors_24h")
-    if os_err is not None and os_err >= 20:
-        add("os_errors", "medium", "OS reporting errors", f"{os_err:.0f} system errors in 24h")
+    if sev := hit("os_errors_24h", "medium"):
+        add("os_errors", sev, "OS reporting errors", f"{_f(m, 'os_errors_24h'):.0f} system errors in 24h",
+            param="os_errors_24h")
 
     # ---------- VDI ----------
     if kind == "vdi":
-        rtt = _f(m, "session_latency_ms")
-        if rtt is not None and rtt >= 200:
-            add("vdi_latency", "high", "Virtual desktop lagging", f"Session round-trip {rtt:.0f} ms")
-        logon = _f(m, "logon_seconds")
-        if logon is not None and logon >= 60:
-            add("vdi_slow_logon", "medium", "Slow virtual desktop logon", f"Logon took {logon:.0f}s")
+        if sev := hit("session_latency_ms", "high"):
+            add("vdi_latency", sev, "Virtual desktop lagging",
+                f"Session round-trip {_f(m, 'session_latency_ms'):.0f} ms", param="session_latency_ms")
+        if sev := hit("logon_seconds", "medium"):
+            add("vdi_slow_logon", sev, "Slow virtual desktop logon",
+                f"Logon took {_f(m, 'logon_seconds'):.0f}s", param="logon_seconds")
 
     # ---------- applications ----------
     for a in apps or []:
         name = a.get("name")
         if not name:
             continue
-        if (a.get("crashes_24h") or 0) >= 3:
-            add(f"app_crash:{name}", "high", f"{name} keeps crashing",
+        at = app_th(name)
+        sev = lambda k, warn_sev: (None if (lv := level(at, k, _f(a, k))) is None
+                                   else "high" if lv == "crit" else warn_sev)
+        if s_ := sev("crashes_24h", "high"):
+            add(f"app_crash:{name}", s_, f"{name} keeps crashing",
                 f"{a['crashes_24h']} crashes in 24h (v{a.get('version') or '?'})",
-                "repair_app" if managed else None, name)
-        if (a.get("latency_ms") or 0) >= 1500:
-            add(f"app_slow:{name}", "medium", f"{name} is slow",
-                f"Response time {a['latency_ms']:.0f} ms", None, name)
-        if (a.get("mem_mb") or 0) >= 2500:
-            add(f"app_memory:{name}", "medium", f"{name} using too much memory",
-                f"{a['mem_mb']:.0f} MB in use", "restart_app" if managed else None, name)
+                "repair_app" if managed else None, name, "app.crashes_24h")
+        if s_ := sev("hangs_24h", "medium"):
+            add(f"app_hang:{name}", s_, f"{name} keeps hanging", f"{a['hangs_24h']} hangs in 24h", None, name,
+                "app.hangs_24h")
+        if s_ := sev("latency_ms", "medium"):
+            add(f"app_slow:{name}", s_, f"{name} is slow",
+                f"Response time {a['latency_ms']:.0f} ms", None, name, "app.latency_ms")
+        if s_ := sev("mem_mb", "medium"):
+            add(f"app_memory:{name}", s_, f"{name} using too much memory",
+                f"{a['mem_mb']:.0f} MB in use", "restart_app" if managed else None, name, "app.mem_mb")
+        if s_ := sev("cpu_pct", "medium"):
+            add(f"app_cpu:{name}", s_, f"{name} using a lot of CPU", f"{a['cpu_pct']:.0f}% CPU", None, name,
+                "app.cpu_pct")
     return out
 
 

@@ -506,6 +506,7 @@ body.console .wrap { padding: 22px 28px 90px; max-width: 1500px; width: 100%; ma
 .t-action { border-color: #93b4f0; background: #eff5ff; } .t-action .fi { background: #3b6fd4; color: #fff; }
 .t-notify_user, .t-notify_it { border-color: #b9a4f0; background: #f5f1ff; }
 .t-guide { border-color: #7dd3c8; background: #effdfb; }
+.t-script { border-color: #a3a3a3; background: #f4f4f5; } .t-script .fi { background: #27272a; color: #fff; }
 .pin { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #3b82f6; border: 2px solid #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, .25); }
 .pin.in { top: -8px; left: calc(50% - 7px); pointer-events: none; }
 .ports { position: relative; height: 0; display: flex; justify-content: space-around; }
@@ -577,3 +578,33 @@ pre.code { background: var(--card-hi); border: 1px solid var(--line); border-rad
 .drawer label input { width: 100%; background: var(--card-hi); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; margin: 4px 0 8px; }
 @media (max-width: 900px) { .bell { top: auto; bottom: 86px; right: 16px; } .bellbox { top: auto; bottom: 140px; } }
 .filterbar { padding-right: 64px; }
+
+/* ---------- thresholds + scripts ---------- */
+.th-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.th-scope select, .sc-main select, .sc-main input:not([type=checkbox]), .sc-main textarea { background: var(--card-hi); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 13px; }
+.grow { flex: 1; }
+.th-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.th { padding: 14px; display: grid; gap: 8px; animation: slide .4s both; }
+.th.changed { box-shadow: 0 0 0 2px var(--accent); }
+.th-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.meterbar { position: relative; height: 14px; border-radius: 999px; overflow: visible;
+  background: linear-gradient(90deg, rgba(52,211,153,.35) 0 var(--w), rgba(251,191,36,.4) var(--w) var(--c), rgba(248,113,113,.45) var(--c) 100%); }
+.meterbar.below { background: linear-gradient(90deg, rgba(248,113,113,.45) 0 var(--c), rgba(251,191,36,.4) var(--c) var(--w), rgba(52,211,153,.35) var(--w) 100%); }
+.meterbar .mk { position: absolute; top: -5px; width: 3px; height: 24px; border-radius: 2px; transform: translateX(-1px); transition: left .15s; }
+.meterbar .mk.w { background: var(--warn); } .meterbar .mk.c { background: var(--bad); }
+.meterbar .range { position: absolute; top: 3px; height: 8px; border-radius: 999px; background: var(--text); opacity: .55; }
+.th-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 12px; align-items: center; }
+.th-inputs label { display: grid; grid-template-columns: 62px 1fr 64px; gap: 6px; align-items: center; color: var(--muted); }
+.th-inputs label.sus { grid-template-columns: 62px 64px auto; }
+.th-inputs output { font-weight: 700; color: var(--text); font-size: 12px; }
+.th-inputs input[type=number] { background: var(--card-hi); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; font: inherit; width: 60px; }
+.sc-layout { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+.sc-main { display: grid; gap: 14px; min-width: 0; }
+.sc-item { cursor: pointer; } .sc-item.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.sc-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.sc-row label { display: grid; gap: 4px; min-width: 150px; } .sc-row label.grow2 { flex: 1; } .sc-row label.check { display: flex; min-width: 0; align-items: center; }
+.sc-main .form label { display: grid; gap: 4px; }
+textarea.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.5; tab-size: 4; }
+.sc-status { align-items: center; font-size: 13px; }
+.sc-run { cursor: pointer; } .sc-run:hover td { background: var(--card-hi); }
+@media (max-width: 1000px) { .sc-layout { grid-template-columns: 1fr; } .th-inputs { grid-template-columns: 1fr; } }
