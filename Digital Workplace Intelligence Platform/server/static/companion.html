@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DWIP Companion</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .phone { max-width: 480px; margin: 0 auto; padding: 20px 16px 110px; }
+    .phone .card { padding: 18px; margin-bottom: 14px; animation: rise .55s both; }
+    .phone h2 { margin: 0 0 10px; font-size: 18px; }
+    .phone label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    .phone input, .phone select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-hi); color: var(--text); font: inherit; }
+    .phone .btn.full { width: 100%; padding: 12px; margin-top: 12px; }
+    .hello { text-align: center; }
+    .hello .ring-wrap { position: relative; display: grid; place-items: center; margin: 6px auto; }
+    .hello .ring-label { position: absolute; }
+    .stars { display: flex; justify-content: center; gap: 6px; margin: 10px 0; }
+    .stars button { background: none; border: 0; cursor: pointer; font-size: 34px; filter: grayscale(1); transition: transform .2s, filter .2s; }
+    .stars button:hover, .stars button.on { filter: none; transform: scale(1.25) rotate(-8deg); }
+    .msg { padding: 12px; border-radius: 12px; background: var(--card-hi); margin-top: 8px; animation: slide .5s both; font-size: 14px; }
+    .hidden { display: none !important; }
+    .ctab { display: none; } .ctab.active { display: block; animation: viewIn .45s both; }
+    .bottom { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; border-radius: 20px;
+      background: var(--card-hi); border: 1px solid var(--line); backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 5; }
+    .bottom button { position: relative; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; padding: 8px 14px; border-radius: 14px; cursor: pointer; display: grid; justify-items: center; gap: 2px; transition: all .3s; }
+    .bottom button span { font-size: 20px; transition: transform .3s; }
+    .bottom button.active { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    .bottom button.active span { transform: translateY(-2px) scale(1.15); }
+    .bottom .dotn { position: absolute; top: 4px; right: 10px; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); animation: pop .4s both; }
+    .vitals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .gcard { cursor: pointer; transition: transform .25s; } .gcard:hover { transform: translateY(-3px); }
+    .gcard .row { display: flex; gap: 12px; align-items: center; }
+    .gcard .gi { font-size: 30px; }
+    .newtag { font-size: 11px; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+    .stepper .prog { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin: 10px 0 16px; }
+    .stepper .prog b { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+    .stepper .stepbox { min-height: 90px; font-size: 16px; padding: 14px; border-radius: 14px; background: var(--card-hi); animation: slide .4s both; }
+    .stepper .nav2 { display: flex; gap: 8px; margin-top: 12px; } .stepper .nav2 .btn { flex: 1; padding: 12px; }
+    .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+    .confetti i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: fall 1.6s ease-in forwards; }
+    @keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: .6; } }
+    .chat { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; padding: 4px; }
+    .chat .bubble { max-width: 86%; }
+    .row2 { display: flex; gap: 8px; margin-top: 10px; } .row2 input { flex: 1; }
+    .seg { display: flex; gap: 6px; margin-bottom: 12px; }
+    .seg button { flex: 1; border: 1px solid var(--line); background: var(--card-hi); color: var(--text); border-radius: 12px; padding: 9px; font: inherit; cursor: pointer; transition: all .25s; }
+    .seg button.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+  </style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="phone">
+    <div class="brand" style="margin-bottom:16px"><div class="logo">D</div><div><h1>DWIP Companion</h1><p id="hello-sub">Your device, looked after</p></div></div>
+
+    <div class="card" id="join">
+      <h2>Join your device</h2>
+      <label for="name">Device name</label><input id="name" placeholder="e.g. Priya's Pixel">
+      <label for="user">Your name</label><input id="user" placeholder="Priya">
+      <label for="dept">Department</label><input id="dept" placeholder="e.g. Finance">
+      <label for="token">Enrolment token</label><input id="token" value="dev-token">
+      <button class="btn go full" id="go">Connect 🚀</button>
+    </div>
+
+    <div class="hidden" id="main">
+      <!-- HOME -->
+      <section class="ctab active" id="t-home">
+        <div class="card hello">
+          <div class="ring-wrap">
+            <svg class="ring big" viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="bar" id="ring" cx="60" cy="60" r="52"/></svg>
+            <div class="ring-label"><span class="num" id="dex">–</span><span class="cap">Your DEX score</span></div>
+          </div>
+          <div class="vitals" id="vitals"></div>
+        </div>
+        <div class="card hidden" id="survey">
+          <h2 id="survey-q">How is your device feeling?</h2>
+          <div class="stars" id="stars"></div>
+          <input id="comment" placeholder="Anything bugging you? (optional)">
+          <button class="btn go full" id="send">Send feedback</button>
+        </div>
+        <div class="card"><h2>Latest</h2><div id="latest"><p class="muted">All quiet. We'll let you know when we fix something. ✨</p></div></div>
+      </section>
+
+      <!-- GUIDES -->
+      <section class="ctab" id="t-guides">
+        <div class="card stepper hidden" id="stepper"></div>
+        <div id="glist"></div>
+      </section>
+
+      <!-- HELP -->
+      <section class="ctab" id="t-help">
+        <div class="seg"><button class="active" data-seg="ai">✨ Ask the assistant</button><button data-seg="it">🧑‍💻 Talk to IT</button></div>
+        <div class="card" id="seg-ai">
+          <h2>Hi! What's bothering you?</h2>
+          <div class="chat" id="ai-chat"><div class="bubble ai">I can see how your device is doing. Try "my laptop is slow" or "battery drains fast".</div></div>
+          <form class="row2" id="ai-form"><input id="ai-q" placeholder="Describe the problem…" autocomplete="off"><button class="btn go">➤</button></form>
+        </div>
+        <div class="hidden" id="seg-it">
+          <div class="card"><h2>Start a conversation with IT</h2>
+            <input id="it-subj" placeholder="Subject, e.g. Outlook keeps freezing">
+            <input id="it-text" placeholder="What's happening?" style="margin-top:8px">
+            <button class="btn go full" id="it-new">Send to IT</button></div>
+          <div id="threads"></div>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section class="ctab" id="t-inbox">
+        <div class="card"><h2>Messages</h2><div id="msgs"><p class="muted">No messages yet.</p></div></div>
+      </section>
+    </div>
+  </div>
+
+  <nav class="bottom hidden" id="bottom">
+    <button class="active" data-t="home"><span>🏠</span>Home</button>
+    <button data-t="guides"><span>🧭</span>Guides</button>
+    <button data-t="help"><span>💬</span>Help</button>
+    <button data-t="inbox"><span>🔔</span>Inbox</button>
+  </nav>
+  <div class="confetti" id="confetti"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const C = 2 * Math.PI * 52;
+const params = new URLSearchParams(location.search);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ago = (ts) => { const s = Date.now() / 1000 - ts; return s < 60 ? "just now" : s < 3600 ? `${(s / 60) | 0}m ago` : `${(s / 3600) | 0}h ago`; };
+let creds = null, pulse = null, aiHistory = [], openThread = null;
+try { creds = JSON.parse(localStorage.getItem("dwip") || "null"); } catch (e) {}
+if (params.get("device") && params.get("key")) {
+  creds = { device_id: params.get("device"), key: params.get("key") };
+  try { localStorage.setItem("dwip", JSON.stringify(creds)); } catch (e) {}
+}
+const H = () => ({ "Content-Type": "application/json", "X-Device-Key": creds.key });
+const get = (p) => fetch(p, { headers: H() }).then((r) => { if (r.status === 401) reset(); return r.json(); });
+const post = (p, b) => fetch(p, { method: "POST", headers: H(), body: JSON.stringify(b || {}) }).then((r) => r.json());
+function reset() { try { localStorage.removeItem("dwip"); } catch (e) {} location.href = "/companion"; }
+
+function platformInfo() {
+  const ua = navigator.userAgent;
+  let m;
+  if ((m = ua.match(/Android (\d+(\.\d+)?)/))) return { platform: "android", os_version: m[1], kind: "mobile" };
+  if ((m = ua.match(/OS (\d+)_(\d+)/)) && /iPhone|iPad/.test(ua)) return { platform: "ios", os_version: `${m[1]}.${m[2]}`, kind: "mobile" };
+  if (/Windows/.test(ua)) return { platform: "windows", os_version: "", kind: "laptop" };
+  if (/Mac/.test(ua)) return { platform: "macos", os_version: "", kind: "laptop" };
+  return { platform: "other", os_version: "", kind: "mobile" };
+}
+$("#go").onclick = async () => {
+  const r = await fetch("/api/enroll", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: $("#token").value, hostname: $("#name").value || "My phone", user: $("#user").value,
+      department: $("#dept").value || null, model: navigator.platform || "", ...platformInfo() }) });
+  if (!r.ok) { alert("Enrolment failed. Check the token."); return; }
+  creds = await r.json();
+  try { localStorage.setItem("dwip", JSON.stringify(creds)); } catch (e) {}
+  start();
+};
+
+// ---------- tabs ----------
+function tab(t) {
+  $$(".ctab").forEach((s) => s.classList.toggle("active", s.id === `t-${t}`));
+  $$(".bottom button").forEach((b) => b.classList.toggle("active", b.dataset.t === t));
+  const dot = $(`.bottom [data-t="${t}"] .dotn`); if (dot) dot.remove();
+  if (t === "guides") loadGuides();
+  if (t === "help") loadThreads();
+}
+$$(".bottom button").forEach((b) => (b.onclick = () => tab(b.dataset.t)));
+function badge(t) { const b = $(`.bottom [data-t="${t}"]`); if (!$(".dotn", b) && !b.classList.contains("active")) b.insertAdjacentHTML("beforeend", '<i class="dotn"></i>'); }
+
+// ---------- telemetry ----------
+async function collect() {
+  const m = {};
+  const t0 = performance.now();
+  try { await fetch("/api/ping", { cache: "no-store" }); m.network_latency_ms = Math.round(performance.now() - t0); } catch (e) {}
+  try { if (navigator.getBattery) { const b = await navigator.getBattery(); m.battery_pct = Math.round(b.level * 100); m.battery_plugged = b.charging; } } catch (e) {}
+  return m;
+}
+async function send() {
+  const m = await collect();
+  const r = await fetch("/api/telemetry", { method: "POST", headers: H(), body: JSON.stringify({ metrics: m }) });
+  if (r.status === 401) return reset();
+  const { dex } = await r.json();
+  $("#dex").textContent = Math.round(dex);
+  const ring = $("#ring");
+  ring.style.strokeDasharray = C;
+  ring.style.strokeDashoffset = C * (1 - dex / 100);
+  ring.style.stroke = dex >= 80 ? "var(--good)" : dex >= 60 ? "var(--warn)" : "var(--bad)";
+  $("#vitals").innerHTML = [["🔋", m.battery_pct != null ? `${m.battery_pct}%${m.battery_plugged ? "⚡" : ""}` : "n/a"],
+    ["📶", m.network_latency_ms != null ? `${m.network_latency_ms}ms` : "n/a"], ["🛡️", "Protected"]]
+    .map(([i, v]) => `<div class="stat"><b>${i}</b><small>${v}</small></div>`).join("");
+}
+
+// ---------- notifications ----------
+function addMsg(text, where = "#msgs") {
+  const box = $(where);
+  if (box.querySelector(".muted")) box.innerHTML = "";
+  box.insertAdjacentHTML("afterbegin", `<div class="msg">${esc(text)}</div>`);
+  while (box.children.length > 6 && where === "#latest") box.lastChild.remove();
+}
+async function poll() {
+  const { notifications } = await get("/api/agent/commands");
+  notifications.forEach((n) => {
+    if (n.kind === "survey" || n.kind === "pulse") {
+      pulse = n.kind === "pulse" ? n.payload.campaign_id : null;
+      $("#survey-q").textContent = n.kind === "pulse" ? n.payload.question : "How is your device feeling?";
+      $("#survey").classList.remove("hidden");
+      return;
+    }
+    addMsg(n.message);
+    addMsg(n.message, "#latest");
+    if (n.kind === "guide") badge("guides");
+    else if (n.kind === "message") { badge("help"); if (openThread) loadThreads(); }
+    else badge("inbox");
+    if (navigator.vibrate) navigator.vibrate(60);
+  });
+}
+let rating = 0;
+["😞", "🙁", "😐", "🙂", "🤩"].forEach((e, i) => {
+  const b = document.createElement("button");
+  b.textContent = e;
+  b.onclick = () => { rating = i + 1; $$("#stars button").forEach((s, j) => s.classList.toggle("on", j === i)); };
+  $("#stars").appendChild(b);
+});
+$("#send").onclick = async () => {
+  if (!rating) return;
+  await post("/api/agent/survey", { rating, comment: $("#comment").value, campaign_id: pulse });
+  $("#survey").classList.add("hidden");
+  $("#comment").value = ""; rating = 0; pulse = null;
+  $$("#stars button").forEach((s) => s.classList.remove("on"));
+  confetti();
+};
+
+// ---------- guides ----------
+let guides = { delivered: [], library: [] };
+async function loadGuides() {
+  guides = await get("/api/agent/guides");
+  const seen = new Set();
+  const items = [];
+  guides.delivered.forEach((g) => { if (!seen.has(g.id)) { seen.add(g.id); items.push({ ...g, fresh: g.status === "sent" }); } });
+  guides.library.forEach((g) => { if (!seen.has(g.id)) { seen.add(g.id); items.push(g); } });
+  $("#glist").innerHTML = items.map((g, i) => `
+    <div class="card gcard" data-g="${g.id}" style="animation-delay:${i * 50}ms"><div class="row"><span class="gi">${esc(g.icon)}</span>
+      <div><b>${esc(g.title)}</b>${g.fresh ? '<span class="newtag">new</span>' : ""}${g.status === "completed" ? " ✅" : ""}
+      <div class="muted">${esc(g.summary)}</div></div></div></div>`).join("");
+  $$(".gcard").forEach((c) => (c.onclick = () => openGuide(items.find((g) => g.id == c.dataset.g))));
+}
+function openGuide(g) {
+  let i = 0;
+  const box = $("#stepper");
+  box.classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (g.delivery_id) post(`/api/agent/guides/${g.delivery_id}`, { status: "viewed" });
+  const render = () => {
+    box.innerHTML = `<h2>${esc(g.icon)} ${esc(g.title)}</h2><div class="muted">Step ${i + 1} of ${g.steps.length}</div>
+      <div class="prog"><b style="width:${((i + 1) / g.steps.length) * 100}%"></b></div>
+      <div class="stepbox">${esc(g.steps[i])}</div>
+      <div class="nav2"><button class="btn ghost" id="sb">${i ? "← Back" : "Close"}</button>
+      <button class="btn go" id="sn">${i === g.steps.length - 1 ? "Done 🎉" : "Next →"}</button></div>`;
+    $("#sb").onclick = () => { if (i) { i--; render(); } else box.classList.add("hidden"); };
+    $("#sn").onclick = async () => {
+      if (i < g.steps.length - 1) { i++; render(); return; }
+      if (g.delivery_id) await post(`/api/agent/guides/${g.delivery_id}`, { status: "completed" });
+      box.classList.add("hidden");
+      confetti();
+      loadGuides();
+    };
+  };
+  render();
+}
+
+// ---------- help: AI + IT ----------
+$$(".seg button").forEach((b) => (b.onclick = () => {
+  $$(".seg button").forEach((x) => x.classList.toggle("active", x === b));
+  $("#seg-ai").classList.toggle("hidden", b.dataset.seg !== "ai");
+  $("#seg-it").classList.toggle("hidden", b.dataset.seg !== "it");
+}));
+$("#ai-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const q = $("#ai-q").value.trim();
+  if (!q) return;
+  $("#ai-q").value = "";
+  const chat = $("#ai-chat");
+  chat.insertAdjacentHTML("beforeend", `<div class="bubble me">${esc(q)}</div><div class="bubble ai typing" id="typing"><i></i><i></i><i></i></div>`);
+  chat.scrollTop = chat.scrollHeight;
+  const r = await post("/api/agent/assistant", { question: q, history: aiHistory });
+  $("#typing").remove();
+  aiHistory.push({ role: "user", text: q }, { role: "assistant", text: r.answer });
+  chat.insertAdjacentHTML("beforeend", `<div class="bubble ai">${esc(r.answer)}<small>${r.source === "llm" ? "✨ local AI" : "DWIP rules"}</small></div>`);
+  chat.scrollTop = chat.scrollHeight;
+};
+$("#it-new").onclick = async () => {
+  const subject = $("#it-subj").value.trim(), text = $("#it-text").value.trim() || subject;
+  if (!subject) return;
+  const r = await post("/api/agent/conversations", { subject, text });
+  $("#it-subj").value = ""; $("#it-text").value = "";
+  openThread = r.id;
+  loadThreads();
+};
+async function loadThreads() {
+  const list = await get("/api/agent/conversations");
+  $("#threads").innerHTML = list.map((c) => `
+    <div class="card"><h2>💬 ${esc(c.subject)} <span class="tag">${esc(c.status)}</span></h2>
+      <div class="chat">${c.messages.map((m) => `<div class="bubble ${m.sender === "user" ? "me" : m.sender}">${esc(m.text)}
+        <small>${{ user: "You", it: "IT", ai: "✨ DWIP AI" }[m.sender]} · ${ago(m.ts)}</small></div>`).join("")}</div>
+      ${c.status === "open" ? `<form class="row2" data-c="${c.id}"><input placeholder="Reply…" required><button class="btn go">➤</button></form>` : ""}
+    </div>`).join("");
+  $$("#threads .chat").forEach((c) => (c.scrollTop = c.scrollHeight));
+  $$("#threads form").forEach((f) => (f.onsubmit = async (e) => {
+    e.preventDefault();
+    const inp = $("input", f);
+    await post(`/api/agent/conversations/${f.dataset.c}/messages`, { text: inp.value });
+    loadThreads();
+  }));
+}
+
+function confetti() {
+  const box = $("#confetti");
+  const cols = ["#7c5cff", "#22d3ee", "#ec4899", "#34d399", "#fbbf24"];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement("i");
+    c.style.left = `${Math.random() * 100}%`;
+    c.style.background = cols[i % cols.length];
+    c.style.animationDelay = `${Math.random() * .4}s`;
+    box.appendChild(c);
+    setTimeout(() => c.remove(), 2200);
+  }
+}
+
+function start() {
+  $("#join").classList.add("hidden");
+  $("#main").classList.remove("hidden");
+  $("#bottom").classList.remove("hidden");
+  send(); poll();
+  setInterval(send, 30000);
+  setInterval(poll, 6000);
+  setInterval(() => { if ($("#t-help").classList.contains("active") && !$("#seg-it").classList.contains("hidden")) loadThreads(); }, 8000);
+}
+if (creds) start();
+</script>
+</body>
+</html>

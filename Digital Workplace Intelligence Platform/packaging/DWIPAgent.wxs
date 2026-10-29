@@ -1,0 +1,29 @@
+<!-- DWIP agent MSI (WiX v4+). Build: pwsh packaging\build_agent.ps1 -Msi
+     Silent install: msiexec /i DWIPAgent.msi SERVER=http://dwip-host:8000 TOKEN=<enrolment token> LOCATION=Bangalore /qn
+     The MSI copies dwip-agent.exe and runs its own "install" command, which writes the settings and registers
+     the start-up task under SYSTEM. Uninstall from Apps & features or: msiexec /x DWIPAgent.msi /qn -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="DWIP Agent" Manufacturer="DWIP" Version="$(Version)" UpgradeCode="6B2C3E41-7A54-4C1D-9F2A-0D5E8B1C7A90" Scope="perMachine">
+    <MajorUpgrade DowngradeErrorMessage="A newer DWIP Agent is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Property Id="SERVER" Value="http://127.0.0.1:8000" />
+    <Property Id="TOKEN" Value="dev-token" />
+    <Property Id="LOCATION" Value=" " />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="DWIP">
+        <Component Id="AgentExe">
+          <File Id="DwipAgentExe" Source="$(ExePath)" Name="dwip-agent.exe" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <Feature Id="Main"><ComponentRef Id="AgentExe" /></Feature>
+    <CustomAction Id="RegisterAgent" FileRef="DwipAgentExe" Execute="deferred" Impersonate="no" Return="check"
+                  ExeCommand="install --server &quot;[SERVER]&quot; --token &quot;[TOKEN]&quot; --location &quot;[LOCATION]&quot;" />
+    <CustomAction Id="UnregisterAgent" FileRef="DwipAgentExe" Execute="deferred" Impersonate="no" Return="ignore"
+                  ExeCommand="uninstall" />
+    <InstallExecuteSequence>
+      <Custom Action="RegisterAgent" After="InstallFiles" Condition="NOT REMOVE" />
+      <Custom Action="UnregisterAgent" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
+    </InstallExecuteSequence>
+  </Package>
+</Wix>
